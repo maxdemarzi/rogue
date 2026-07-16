@@ -361,7 +361,7 @@ Where:
 
 ## 🚀 8. Uncovered Buy-Side Use Case Solvers (New Capabilities)
 
-To maximize the system's commercial value for buy-side funds, we define five new reasoning models targeting datasets currently unaddressed in standard workflows.
+To maximize the system's commercial value for buy-side funds, we define seven new reasoning models targeting datasets currently unaddressed in standard workflows.
 
 ### A. Federal Contracting Backlog & Revenue Shock Simulator (Use Case 16)
 Integrates US federal contract awards (`data/federal_contracts/`) to estimate dependency risk. We model contract expiration timelines and compute the **Contract Backlog Decay Curve** for targeted firms:
@@ -408,7 +408,23 @@ Analyzes semiconductor fab sizes (`data/semiconductor_industry/fab_capacity`) an
 
 $$\text{Projected Revenue Loss} = \sum_{e \in \text{RestrictedClients}} \text{SalesVolume}_e \times \text{SpotPrice}_{\text{chip}} \times \mathbb{I}(\text{ExportBlocked})$$
 
-* Declares Swan rules that dynamically restrict operational fab capacity utilization if supply chain nodes trigger foreign government entity list actions.
+* Declares Swan Datalog rules that dynamically restrict operational fab capacity utilization if supply chain nodes trigger foreign government entity list actions.
+
+### F. Executive Pay-for-Performance & TSR Alignment Elasticity Solver (Use Case 21)
+Integrates executive salaries (`data/ceo_salaries/`) and daily price histories to compute corporate governance alignment indices. We optimize target sorting for activists by calculating the **TSR-Compensation Elasticity** ($\epsilon_{pay}$):
+
+$$\epsilon_{pay} = \frac{\Delta \% \text{CEO\_Compensation}_{t}}{\Delta \% \text{Total\_Shareholder\_Return}_{t-1}}$$
+
+Where:
+* $\text{Total\_Shareholder\_Return} = \frac{\text{StockPrice}_t - \text{StockPrice}_{t-1} + \text{Dividends}}{\text{StockPrice}_{t-1}}$
+* Target boards where $\epsilon_{pay} < -0.50$ (meaning CEO compensation increases while total shareholder value decreases) are automatically scored as high-priority activist restructuring targets.
+
+### G. Supply Chain Holding Cost & Inflation Squeeze Model (Use Case 22)
+Calculates how working capital costs squeeze the margins of high-DSO / high-inventory supply chains during macroeconomic inflation shocks:
+
+$$\text{HoldingCostFactor}_i = \text{InventoryValue}_i \times \left( \text{WACC}_i + \text{CountryInflation}_{\text{Domicile}_i} \right) \times \frac{\text{DaysSalesOutstanding}_i}{365}$$
+
+This factor is used to discount a target's projected gross operating margins in the LBO debt capacity schedule.
 
 ---
 
