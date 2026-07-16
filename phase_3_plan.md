@@ -190,6 +190,12 @@ node_attributions = select(ExplainNode.node, ExplainNode.weight).to_df()
 edge_attributions = select(ExplainEdge.src, ExplainEdge.dst, ExplainEdge.weight).to_df()
 ```
 
+### E. Incremental Prediction Caching Strategy
+To bypass redundant GNN inference overhead on static historical quarters, we implement an incremental prediction cache:
+1. Swan predictions are stored in a dedicated `predicted_valuations` table in DuckDB.
+2. The Nexus coordinator checks this cache before launching a GNN forward pass.
+3. Inference is only re-triggered when a company's financial records ingest a new quarterly report (detected via update triggers on `sec_financials` tables).
+
 ---
 
 ## 🎯 3. Swan Prescriptive Target Optimizer (`optimizer.py`)
@@ -278,6 +284,11 @@ $$\text{DistanceToDefault} = \frac{\ln(V_A / D) + (r - \sigma_A^2 / 2)T}{\sigma_
 $$\text{ProbabilityOfDefault} = N(-\text{DistanceToDefault})$$
 
 This probability is written back to the `BankruptcyRisk` concept to feed the Graph Contagion Pathfinder.
+
+### C. Vectorized Newton-Raphson Optimization
+Solving systems of non-linear European call options individually for 10,000+ companies leads to query timeouts. We implement two performance optimizations:
+1. The Newton-Raphson option resolution loop is vectorized using multi-dimensional `numpy` array operations, resolving the entire universe in a single execution sweep.
+2. For high-frequency intraday updates, the solver is compiled into a local C++ extension (`merton_solver.so`) bound to the DuckDB engine to guarantee execution under 2 seconds.
 
 ---
 
