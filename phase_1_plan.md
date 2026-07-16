@@ -11,7 +11,7 @@ Based on database structure, cardinality checks, and comprehensive **Use Case Pl
 * **Phase 1 (Active): Complete Swan Ontology mapping all 50 datasets (`ontology.py`)**
 * **Phase 2:** Advanced Reasoning Modules (`path_reasoner.py`, `gnn_model.py`, `optimizer.py`)
 * **Phase 3: Swan Rules & Financial Calculations (`rules.py`)**
-  * *Purpose:* Write declarative Datalog rules to automate **180 financial, growth momentum, CAPM Cost of Equity, WACC, dividend coverage, and working capital efficiency ratios** bridging the gap between raw data and frontier intelligence.
+  * *Purpose:* Write declarative Datalog rules to automate **195 financial, leverage sensitivity, capital allocation, cash flow conversion, and market valuation multiples** bridging the gap between raw data and frontier intelligence.
 * **Phase 4:** Felix Agent Coordinator & Sandboxed Execution (`agent_pipeline.py`)
 * **Phase 5:** Web Server & Glassmorphic Dashboard UI (`web_server.py` & `web_app/`)
 
@@ -166,6 +166,7 @@ We define **51 core concepts** and map relationships across our 229 DuckDB table
 46. **`NewsHeadline`** (Identifier: `id`: String)
     * Properties: `title`
     * Source Tables: `financial_news_raw_partner_headlines`, `financial_news_analyst_ratings_processed`, `financial_news_raw_analyst_ratings`
+    * Properties: `title`
 47. **`SentimentRecord`** (Identifier: `id`: String)
     * Properties: `sentence`, `sentiment`
     * Source Table: `financial_phrasebank_all_data`
@@ -283,7 +284,7 @@ We define the structural relationships linking every concept back to its key dim
 
 ## 🧬 Phase 3: Swan Rules & Financial Calculations
 
-We define **180 declarative Datalog derived rules** inside `rules.py` categorized across 12 business domains:
+We define **195 declarative Datalog derived rules** inside `rules.py` categorized across 13 business domains:
 
 ### 1. DuPont Analysis & Profitability Rules (15 Rules)
 * **`net_profit_margin`**: `net_income_loss / total_revenue`
@@ -473,21 +474,38 @@ We define **180 declarative Datalog derived rules** inside `rules.py` categorize
 * **`biotech_pipeline_density`**: `clinical_trial_count / total_employees`
 
 ### 12. Cost of Capital (WACC), Margin Expansion & Dividend Security (15 Rules)
-* **`cost_of_equity_capm`**: `risk_free_rate + beta * market_risk_premium` (CAPM model cost of equity capital)
-* **`cost_of_debt`**: `interest_expense / total_debt` (Effective gross interest rate paid on debt obligations)
-* **`wacc`**: `(equity_weight * cost_of_equity_capm) + (debt_weight * cost_of_debt * (1 - effective_tax_rate))` (Weighted Average Cost of Capital)
+* **`cost_of_equity_capm`**: `risk_free_rate + beta * market_risk_premium`
+* **`cost_of_debt`**: `interest_expense / total_debt`
+* **`wacc`**: `(equity_weight * cost_of_equity_capm) + (debt_weight * cost_of_debt * (1 - effective_tax_rate))`
 * **`ev_to_fcf`**: `enterprise_value / free_cash_flow`
 * **`ev_to_invested_capital`**: `enterprise_value / (stockholders_equity + total_debt - cash_and_equivalents)`
-* **`merton_default_distance_proxy`**: `(total_assets - total_liabilities) / volatility` (Structural default risk proximity model)
+* **`merton_default_distance_proxy`**: `(total_assets - total_liabilities) / volatility`
 * **`equity_value_headroom`**: `market_capitalization / total_liabilities`
-* **`accounts_receivable_pct_revenue`**: `accounts_receivable / total_revenue` (Accounts receivable credit intensity)
+* **`accounts_receivable_pct_revenue`**: `accounts_receivable / total_revenue`
 * **`inventory_pct_cogs`**: `inventory / cogs`
 * **`accounts_payable_pct_cogs`**: `accounts_payable / cogs`
 * **`working_capital_intensity`**: `working_capital / total_revenue`
 * **`ebitda_margin_expansion`**: `ebitda_margin_t - ebitda_margin_t_minus_1`
 * **`gross_margin_expansion`**: `gross_margin_t - gross_margin_t_minus_1`
-* **`dividend_coverage_ratio`**: `net_income_loss / dividends_paid` (Net income dividend coverage safety factor)
-* **`fcf_dividend_coverage_ratio`**: `free_cash_flow / dividends_paid` (FCF dividend coverage safety factor)
+* **`dividend_coverage_ratio`**: `net_income_loss / dividends_paid`
+* **`fcf_dividend_coverage_ratio`**: `free_cash_flow / dividends_paid`
+
+### 13. Capital Allocation Integrity, Operating Leverage & Cash Flow Conversion (15 Rules)
+* **`plowback_ratio`**: `1 - dividend_payout_ratio` (Percent of profits retained to grow operations)
+* **`share_buyback_dilution_offset`**: `share_repurchase_amount / executive_stock_dilution` (Evaluates if repurchases reduce float or merely cover executive stock options dilution)
+* **`capital_return_to_ebitda`**: `(share_repurchase_amount + dividends_paid) / ebitda`
+* **`degree_of_operating_leverage_dol`**: `% change in operating_income / % change in total_revenue` (Sensitivity coefficient of operating profit to top-line volume shifts)
+* **`degree_of_financial_leverage_dfl`**: `% change in earnings_per_share / % change in operating_income` (Efficacy of debt formatting bottom-line returns)
+* **`degree_of_total_leverage_dtl`**: `degree_of_operating_leverage_dol * degree_of_financial_leverage_dfl`
+* **`tax_shield_usd`**: `interest_expense * effective_tax_rate` (Tax savings generated via debt interest deductibility)
+* **`adjusted_ebitda`**: `operating_income_loss + depreciation_amortization`
+* **`free_cash_flow_to_firm_fcff`**: `operating_income_loss * (1 - effective_tax_rate) + depreciation_amortization - capital_expenditures - change_in_working_capital` (Unlevered cash flow available to all capital providers)
+* **`free_cash_flow_to_equity_fcfe`**: `free_cash_flow_to_firm_fcff + net_borrowings - interest_expense * (1 - effective_tax_rate)` (Levered cash flow available to common equity holders)
+* **`fcf_conversion_ratio`**: `free_cash_flow / ebitda` (Measures cash conversion efficiency of operating profits)
+* **`risk_premium_over_risk_free`**: `earnings_yield - US10Y_bond_yield` (Equity risk premium spread evaluation)
+* **`tobin_q_proxy`**: `(market_capitalization + total_liabilities) / total_assets` (Compares asset replacement cost with security valuation)
+* **`reinvestment_rate_post_tax`**: `(capital_expenditures - depreciation_amortization + rnd_expenses) / (operating_income_loss * (1 - effective_tax_rate))`
+* **`return_on_incremental_invested_capital_roiic`**: `change_in_operating_income_post_tax / prior_year_reinvestment`
 
 ---
 
