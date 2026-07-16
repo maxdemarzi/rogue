@@ -11,7 +11,7 @@ Based on database structure, cardinality checks, and comprehensive **Use Case Pl
 * **Phase 1 (Active): Complete Swan Ontology mapping all 50 datasets (`ontology.py`)**
 * **Phase 2:** Advanced Reasoning Modules (`path_reasoner.py`, `gnn_model.py`, `optimizer.py`)
 * **Phase 3: Swan Rules & Financial Calculations (`rules.py`)**
-  * *Purpose:* Write declarative Datalog rules to automate **210 financial, leverage sensitivity, capital allocation, cash flow conversion, and market valuation multiples** bridging the gap between raw data and frontier intelligence.
+  * *Purpose:* Write declarative Datalog rules to automate **225 financial, leverage sensitivity, capital allocation, cash flow conversion, and market valuation multiples** bridging the gap between raw data and frontier intelligence.
 * **Phase 4:** Felix Agent Coordinator & Sandboxed Execution (`agent_pipeline.py`)
 * **Phase 5:** Web Server & Glassmorphic Dashboard UI (`web_server.py` & `web_app/`)
 
@@ -282,7 +282,7 @@ We define the structural relationships linking every concept back to its key dim
 
 ## 🧬 Phase 3: Swan Rules & Financial Calculations
 
-We define **210 declarative Datalog derived rules** inside `rules.py` categorized across 14 business domains:
+We define **225 declarative Datalog derived rules** inside `rules.py` categorized across 15 business domains:
 
 ### 1. DuPont Analysis & Profitability Rules (15 Rules)
 * **`net_profit_margin`**: `net_income_loss / total_revenue`
@@ -521,6 +521,23 @@ We define **210 declarative Datalog derived rules** inside `rules.py` categorize
 * **`inflation_differential`**: `local_inflation_rate - macro_indicator_inflation_rate`
 * **`sovereign_spread_premium`**: `sovereign_yield - risk_free_rate`
 * **`real_sovereign_yield`**: `sovereign_yield - local_inflation_rate`
+
+### 15. Quality of Earnings, Rollover Risk & Growth Capital Efficacy (15 Rules)
+* **`sustainable_reinvestment_rate`**: `reinvestment_rate_post_tax * return_on_invested_capital_roic`
+* **`net_debt_to_capital`**: `net_debt / (net_debt + stockholders_equity)`
+* **`enterprise_value_to_operating_cash`**: `enterprise_value / net_cash_operating`
+* **`working_capital_to_revenue`**: `working_capital / total_revenue`
+* **`free_cash_flow_quality_ratio`**: `free_cash_flow_per_share / earnings_per_share_eps`
+* **`interest_expense_to_operating_income`**: `interest_expense / operating_income_loss`
+* **`short_term_debt_rollover_ratio`**: `current_liabilities / total_liabilities`
+* **`short_term_debt_to_equity`**: `current_liabilities / stockholders_equity`
+* **`capital_expenditures_to_assets`**: `capital_expenditures / total_assets`
+* **`maintenance_capex_estimate`**: `depreciation_amortization`
+* **`growth_capex_estimate`**: `capital_expenditures - depreciation_amortization`
+* **`country_equity_risk_premium`**: `equity_risk_premium + sovereign_spread_premium`
+* **`real_corporate_borrowing_rate`**: `cost_of_debt - local_inflation_rate`
+* **`economic_freedom_trade_freedom_premium`**: `economic_freedom_rank - SovereignRating.local_rating`
+* **`retained_earnings_growth_yoy`**: `(retained_earnings_t - retained_earnings_t_minus_1) / retained_earnings_t_minus_1`
 
 ---
 
