@@ -12,7 +12,8 @@ Based on database structure, cardinality checks, and comprehensive **Use Case Pl
 * **Phase 2:** Advanced Reasoning Modules (`path_reasoner.py`, `gnn_model.py`, `optimizer.py`)
 * **Phase 3: Swan Rules & Financial Calculations (`rules.py`)**
   * *Purpose:* Write declarative Datalog rules to automate **240 financial, leverage sensitivity, capital allocation, cash flow conversion, and market valuation multiples** bridging the gap between raw data and frontier intelligence.
-* **Phase 4:** Felix Agent Coordinator & Sandboxed Execution (`agent_pipeline.py`)
+* **Phase 4:** Nexus Agent Coordinator & Sandboxed Execution (`agent_pipeline.py`)
+
 * **Phase 5:** Web Server & Glassmorphic Dashboard UI (`web_server.py` & `web_app/`)
 
 ---

@@ -1,16 +1,16 @@
-# Rebuilding the Rogo AI Analyst - Phase 4: Felix Agent Coordinator & Playbook Orchestrator
+# Rebuilding the Rogo AI Analyst - Phase 4: Nexus Agent Coordinator & Playbook Orchestrator
 
-This document details the software design, routing mechanics, sandboxed execution rules, and playbook integration schemes for the **Felix Agent Coordinator** (`agent_pipeline.py`). Felix coordinates incoming user questions, compiles them into executable Swan and Python pipelines, enforces security sandboxing, and synthesizes output deliverables for all **24 financial due diligence use cases**.
+This document details the software design, routing mechanics, sandboxed execution rules, and playbook integration schemes for the **Nexus Agent Coordinator** (`agent_pipeline.py`). Nexus coordinates incoming user questions, compiles them into executable Swan and Python pipelines, enforces security sandboxing, and synthesizes output deliverables for all **24 financial due diligence use cases**.
 
 ---
 
-## 📐 1. Felix Coordinator Architecture
+## 📐 1. Nexus Coordinator Architecture
 
-Felix acts as the central cognitive router. It bridges the natural language interface (Chat UI) with the local reasoning solvers:
+Nexus acts as the central cognitive router. It bridges the natural language interface (Chat UI) with the local reasoning solvers:
 
 ```mermaid
 graph TD
-    User[User Prompt / Chat UI] --> Router{Felix Cognitive Router}
+    User[User Prompt / Chat UI] --> Router{Nexus Cognitive Router}
     
     subgraph Model Broker Routing
         Router -->|Simple queries| Luna[Luna/Terra: Tag Extraction]
@@ -72,7 +72,7 @@ class SecureASTValidator(ast.NodeVisitor):
 
 ## 💼 3. The Playbook Orchestrator (Solving the 24 Use Cases)
 
-Felix compiles incoming queries into specific playbook pipelines, querying the DuckDB/Swan layer and outputting target spreadsheets, IC memos, or graph visualizations:
+Nexus compiles incoming queries into specific playbook pipelines, querying the DuckDB/Swan layer and outputting target spreadsheets, IC memos, or graph visualizations:
 
 ### 1. Earnings Comp & Consensus Analysis
 * *Pipeline:* Joins `earnings_estimates` with daily `ohlcv` price series matching filing dates. Calculates post-release stock price drift.
@@ -122,7 +122,7 @@ Felix compiles incoming queries into specific playbook pipelines, querying the D
 * *Pipeline:* Shock-refinances upcoming bond maturities at current yield spreads, propagating distress down the supplies graph.
 * *Output:* Systemic contagion report mapping write-off risk dollar impacts for downstream suppliers.
 
-### 13. Autonomous PE/LBO Deal Hunter & Valuator
+### 13. Autonomous PE/LBO Target Deal Hunter & Valuator
 * *Pipeline:* Filters low-multiple firms, excludes litigation defendants, optimizes synergy targets using HiGHS, and constructs debt payback models.
 * *Output:* Full LBO target sourcing pitch deck paired with an Excel debt model.
 
@@ -176,5 +176,5 @@ Felix compiles incoming queries into specific playbook pipelines, querying the D
 
 The test runner `verify_coordinator.py` executes these validation checks:
 1. **Sandbox Prohibitions:** Verifies that importing `os` or calling `eval` triggers a `PermissionError` inside the AST sandbox.
-2. **Playbook Compilation:** Simulates user prompts for each of the 24 use cases and asserts that Felix builds the correct PyRel/SQL execution queries.
+2. **Playbook Compilation:** Simulates user prompts for each of the 24 use cases and asserts that Nexus builds the correct PyRel/SQL execution queries.
 3. **Model Broker Routing:** Verifies that simple query strings compile using Luna, while complex optimization prompts route to Sol.

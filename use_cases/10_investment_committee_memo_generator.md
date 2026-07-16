@@ -1,6 +1,6 @@
 # 📄 Use Case 10: Investment Committee (IC) Memo & Slide Pitchbook Generator
 
-This playbook implements the **"Last Mile" Deliverable Generator** (similar to Rogo's *Felix* agent and Hebbia's slide generators). It automates the compilation of investment committee (IC) memos and presentation slides, embedding sentence-level citations to verify accuracy.
+This playbook implements the **"Last Mile" Deliverable Generator** (similar to Rogo's *Nexus* agent and Hebbia's slide generators). It automates the compilation of investment committee (IC) memos and presentation slides, embedding sentence-level citations to verify accuracy.
 
 ---
 
