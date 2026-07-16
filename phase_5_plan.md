@@ -131,7 +131,7 @@ To maintain auditability, when an analyst hovers over any metrics in the comps g
 
 ## 🚀 6. Premium "Wow Factor" Interactive Features
 
-To fully capture institutional buy-side interest, we implement four highly responsive interactive visualizers that demonstrate the real-time reasoning of our neuro-symbolic backend:
+To fully capture institutional buy-side interest, we implement six highly responsive interactive visualizers that demonstrate the real-time reasoning of our neuro-symbolic backend:
 
 ### A. Dynamic "What-If" LBO & M&A Sensitivity Sliders
 * **How it works:** Directly in the comps grid or deal evaluation pane, analysts can adjust core transaction assumptions via sliders:
@@ -157,6 +157,18 @@ To fully capture institutional buy-side interest, we implement four highly respo
 * **How it works:** Integrates a glassmorphic microphone button in the central input console utilizing the native browser Web Speech API:
   * Analysts can dictate complex questions (e.g., *"Find undervalued semiconductor fabs and show me the warm introductions to their board members"*).
   * Synthesizes audio commands into formatted prompt text for the Nexus Router, showing active voice-waveform animations.
+
+### E. Virtual Data Room (VDR) AI Redaction Masker
+* **How it works:** Assists M&A legal and compliance teams in formatting confidential documentation:
+  * Users can toggle specific redaction categories (e.g., *Personal Identities, Pricing Terms, Patent IDs*).
+  * The PDF/text viewer instantly overlays pixelated blur masks or black blocks over the matched entities in real-time.
+  * Hovering over a masked block displays the regulatory or NDA compliance rationale (e.g., *Redacted under Section 4: Proprietary Intellectual Property*).
+
+### F. Activist Proxy Campaign Board seat War Simulator
+* **How it works:** Models shareholder vote responses for activist campaign managers:
+  * Displays the target company's current director board layout.
+  * Activists can drag-and-drop target directors to "remove" list and nominate candidates from their board member network.
+  * Plats a real-time bar chart showing the projected proxy vote distribution (Sponsor/Activist/Retail) by correlating institutional share block distributions inside DuckDB.
 
 ---
 
