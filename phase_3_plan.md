@@ -426,6 +426,32 @@ $$\text{HoldingCostFactor}_i = \text{InventoryValue}_i \times \left( \text{WACC}
 
 This factor is used to discount a target's projected gross operating margins in the LBO debt capacity schedule.
 
+### H. Startup Liquidity runway & VC Down-Round Predictor (Use Case 23)
+Integrates startup funding records (`data/startup_vc/`) to screen private firms for late-stage buyouts or secondary market shares acquisitions.
+* Estimates monthly burn rate based on headcount and average regional salaries:
+
+$$\text{BurnRate}_{\text{monthly}} = \text{Employees} \times \text{AverageWorkerSalary} + \text{OperationalOverhead}$$
+
+$$\text{RunwayMonths} = \frac{\text{FundraisingBalance}}{\text{BurnRate}_{\text{monthly}}}$$
+
+* If $\text{RunwayMonths} < 6$ and corporate credit spreads (BAA10Y) are elevated, it computes the **Down-Round / Insolvency Probability** ($P_{down}$):
+
+$$P_{down} = \Phi\left( \delta_1 \cdot (6 - \text{RunwayMonths}) + \delta_2 \cdot \text{BAA10Y\_Spread} - \delta_3 \cdot \text{FundingStageRank} \right)$$
+
+* Companies with $P_{down} > 0.80$ are flagged as highly motivated sellers for secondary market PE funds.
+
+### I. Corporate Input Commodity Hedging Solver (Use Case 24)
+Formulates a prescriptive optimization problem using Swan's C++ solver to hedge commodity raw material inputs (crude oil, gold, silver, copper from `data/commodity_prices/`) for industrial manufacturing firms:
+* Minimizes the variance of projected inventory procurement costs over a 12-month horizon using derivative allocations ($h_c$):
+
+$$\min_h \sum_{c \in \text{Commodities}} \text{QuantityRequired}_c \times \text{Variance}_c \times (1 - h_c)^2$$
+
+Subject to:
+
+$$\sum_{c} h_c \times \text{PremiumCost}_c \le \text{HedgingBudget}$$
+
+$$0.0 \le h_c \le 0.85 \quad \text{(Maximum hedging cover constraint)}$$
+
 ---
 
 ## 🌎 9. Macro Carry Trade & Hedging Solver (`macro_optimizer.py`)
