@@ -356,10 +356,48 @@ Where:
 * $\text{ConvictionScore}_T$ is the insider's historical trading conviction score from `insider_trading`.
 * $\lambda = 0.5$ is the information transmission decay factor per graph hop.
 * If $P_{leakage} > 0.70$, an automated governance alert is generated in the dashboard.
+```
 
 ---
 
-## 🌎 8. Macro Carry Trade & Hedging Solver (`macro_optimizer.py`)
+## 🚀 8. Uncovered Buy-Side Use Case Solvers (New Capabilities)
+
+To maximize the system's commercial value for buy-side funds, we define three new reasoning models targeting datasets currently unaddressed in standard workflows.
+
+### A. Federal Contracting Backlog & Revenue Shock Simulator (Use Case 16)
+Integrates US federal contract awards (`data/federal_contracts/`) to estimate dependency risk. We model contract expiration timelines and compute the **Contract Backlog Decay Curve** for targeted firms:
+
+$$\text{Backlog}_{t} = \sum_{c \in \text{Contracts}} \text{AwardAmount}_c \times \max\left(0, 1 - \frac{\text{ElapsedMonths}_{c, t}}{\text{TotalDurationMonths}_c}\right)$$
+
+If a target firm faces a backlog roll-off exceeding 40% of its current yearly revenue over the next 12 months, the simulator applies a discount penalty ($Shock_{rev}$) to projected cash flows:
+
+$$\text{Adjusted Revenue}_{t+1} = \text{Revenue}_{t} \times (1 - Shock_{rev})$$
+
+### B. ESG Capital Flight & Controversy Valuation Discount Engine (Use Case 17)
+Maps ESG controversy spikes from `data/esg_ratings/` into institutional capital outflow risk.
+* When a company suffers a high controversy level adjustment ($ESG_{controv} \ge 4$), the engine calculates the probability of institutional fund divestment ($P_{flight}$):
+
+$$P_{flight} = \Phi\left(\alpha \cdot ESG_{controv} + \beta \cdot \text{InstitutionalWeight} - \gamma \cdot \text{ESG\_Score}\right)$$
+
+Where $\Phi$ is the cumulative distribution function of a standard normal distribution.
+* The predicted capital flight probability is used to compute an **ESG Valuation Penalty Ratio** ($Penalty_{esg}$), modifying the GNN's predicted EV/Sales multiple prior to optimization:
+
+$$\text{Adjusted Multiple} = \text{PredictedMultiple}_{gnn} \times (1 - P_{flight} \times Penalty_{esg})$$
+
+### C. Biotech Binary Clinical Trial Jump Simulator (Use Case 18)
+Models pre-revenue drug developers (`data/pharma_industry/`) to simulate valuation jumps around Phase 3 clinical trial disclosures.
+* The simulator traces the target’s `ClinicalTrial` pipeline and maps the target drug's indication to the global patient population size and mortality from `DiseaseBurden`.
+* We compute the expected post-event equity valuation using historical Phase 3 success probabilities ($P_{success}$) compiled from peer biotech outcomes:
+
+$$E[V_{\text{post\_event}}] = P_{success} \times V_{\text{approved}} + (1 - P_{success}) \times V_{\text{liquidation}}$$
+
+Where:
+* $V_{\text{approved}} = \text{MarketCases} \times \text{ExpectedDrugPrice} \times \text{MarketShareMultiplier}$
+* $V_{\text{liquidation}} = \text{CashAndEquivalents} - \text{TotalLiabilities}$
+
+---
+
+## 🌎 9. Macro Carry Trade & Hedging Solver (`macro_optimizer.py`)
 
 For global macro treasury analysis (Use Case 15), we build an optimal currency carry optimizer inside Swan's prescriptive solver to find the optimal allocation weights ($w_j$) across international sovereign yield curves:
 
@@ -388,7 +426,7 @@ w_alloc = carry_prob.solve_for(Country.w_alloc, type="cont", lower=-1.0, upper=1
 
 ---
 
-## 📈 9. Live Formula Excel Modeler (`live_modeler.py`)
+## 📈 10. Live Formula Excel Modeler (`live_modeler.py`)
 
 Generates living Excel spreadsheet outputs (Use Cases 11 & 13) using `openpyxl`.
 * **Zero Hardcoding Rule:** Projection cells must refer to formula equations in uppercase string parameters (e.g. `=B2*0.60`) rather than injecting static float results.
@@ -405,7 +443,7 @@ Generates living Excel spreadsheet outputs (Use Cases 11 & 13) using `openpyxl`.
 
 ---
 
-## 🔗 10. Source Citation Engine (`citation_engine.py`)
+## 🔗 11. Source Citation Engine (`citation_engine.py`)
 
 Binds cell data in web grids and pitchbooks to row indexes inside DuckDB:
 
