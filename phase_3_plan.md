@@ -495,6 +495,24 @@ $$\text{DivergenceIndex} = \left| \text{HeadlineSentimentScore} - \text{AnalystB
 
 Firms with high divergence indexes are flagged as high-conviction long/short targets.
 
+### F. Koyfin Multiples Mean-Reversion Solver
+Matches Koyfin historical multiple charts. Computes a valuation multiple's distance from its historical mean (e.g. 5-year average EV/Sales or P/E) to locate undervalued anomalies:
+
+$$Z_{\text{valuation}} = \frac{\text{CurrentMultiple} - \mu_{\text{historical}}}{\sigma_{\text{historical}}}$$
+
+Targets where $Z_{\text{valuation}} < -2.0$ are flagged as high-margin mean-reversion buying opportunities.
+
+### G. Bloomberg Covered Interest Rate Parity (CIP) Basis Spread Arbitrage Solver
+Matches Bloomberg swap manager pricing (`SWPM`). Formulates the Covered Interest Parity (CIP) swap arbitrage equation inside Swan's prescriptive solver across daily FX rates and macro yield curves:
+
+$$\text{ForwardRate}_{\text{theoretical}} = \text{SpotRate} \times \left( \frac{1 + \text{InterestRate}_{\text{Local}} \cdot \frac{T}{360}}{1 + \text{InterestRate}_{\text{Fed}} \cdot \frac{T}{360}} \right)$$
+
+Calculates the basis spread mismatch:
+
+$$\Delta_{basis} = \frac{\text{ForwardRate}_{\text{actual}}}{\text{SpotRate}} \times \left( 1 + \text{InterestRate}_{\text{Fed}} \cdot \frac{T}{360} \right) - \left( 1 + \text{InterestRate}_{\text{Local}} \cdot \frac{T}{360} \right)$$
+
+Auto-flags riskless cross-currency arbitrage trades if basis spreads exceed 10 bps.
+
 ---
 
 ## 🌎 10. Macro Carry Trade & Hedging Solver (`macro_optimizer.py`)
