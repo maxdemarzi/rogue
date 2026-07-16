@@ -564,6 +564,16 @@ $$\min_w \sum_{i} w_i \times \text{ExpectedReturn}_i - \sum_{i} \gamma \cdot \si
 
 Subject to portfolio sector weights and capital budget bounds.
 
+### N. Bloomberg-Style Macro Stress-Testing & Scenario Analysis Solver
+Matches Bloomberg portfolio stress testing (`FST`). Projects portfolio-wide default rates, EBITDA margins, and interest coverage ratios under multi-variable macro shocks (e.g., +100bps rate hike, +20% oil spike, -10% USD drop) by shocking covariance matrices:
+
+$$\text{Projected EBITDA}_i = \text{EBITDA}_i \times (1 + \Delta \text{Revenue}_{\text{shock}} - \Delta \text{HoldingCost}_{\text{shock}})$$
+
+### O. Hebbia-Style Multi-Source Entity Resolution & Fuzzy Joiner
+Matches Hebbia's document table joins. Resolves duplicate or mismatching company names across diverse datasets (LEI mapping, VC funding files, SEC CIK records) using fuzzy Jaro-Winkler distances combined with Cosine Similarity of text embeddings:
+
+$$\text{Sim}_{\text{resolved}} = w_1 \times \text{JaroWinkler}(Name_1, Name_2) + w_2 \times \text{CosineSim}(Embed_1, Embed_2)$$
+
 ---
 
 ## 🌎 10. Macro Carry Trade & Hedging Solver (`macro_optimizer.py`)

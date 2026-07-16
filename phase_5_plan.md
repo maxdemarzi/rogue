@@ -180,6 +180,16 @@ To fully capture institutional buy-side interest, we implement six highly respon
   * Renders a cost curve plotting execution slippage against trading volume sizes.
   * Analysts can slide-adjust trading timelines (e.g. rebalancing over 5 days vs 1 day) to watch the Almgren-Chriss slippage curve adjust, finding the optimal cost-vs-delay execution boundary.
 
+### I. Bloomberg-Style Macro Scenario Stress-Testing Console
+* **How it works:** Models multi-variable macro scenarios on target portfolios:
+  * Renders a stress-test panel displaying portfolio-wide EBITDA margins and default rates.
+  * Analysts can slide-adjust macro variables (Fed Policy Rates, Oil Spot Prices, FX Spreads) to watch covariance shifts shock company interest expenses and margins dynamically in real-time.
+
+### J. Hebbia-Style Multi-Source Entity Resolution & Linkage Grids
+* **How it works:** Manages fuzzy company name mapping across disparate databases:
+  * Displays a side-by-side matching grid highlighting matching confidence scores.
+  * Provides checkbox overrides to let analysts verify and merge fuzzy links manually, instantly correcting overlapping B2B graph pathfinder edges.
+
 ---
 
 ## 🧪 Phase 5 Verification Plan
