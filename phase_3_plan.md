@@ -356,13 +356,12 @@ Where:
 * $\text{ConvictionScore}_T$ is the insider's historical trading conviction score from `insider_trading`.
 * $\lambda = 0.5$ is the information transmission decay factor per graph hop.
 * If $P_{leakage} > 0.70$, an automated governance alert is generated in the dashboard.
-```
 
 ---
 
 ## 🚀 8. Uncovered Buy-Side Use Case Solvers (New Capabilities)
 
-To maximize the system's commercial value for buy-side funds, we define three new reasoning models targeting datasets currently unaddressed in standard workflows.
+To maximize the system's commercial value for buy-side funds, we define five new reasoning models targeting datasets currently unaddressed in standard workflows.
 
 ### A. Federal Contracting Backlog & Revenue Shock Simulator (Use Case 16)
 Integrates US federal contract awards (`data/federal_contracts/`) to estimate dependency risk. We model contract expiration timelines and compute the **Contract Backlog Decay Curve** for targeted firms:
@@ -394,6 +393,22 @@ $$E[V_{\text{post\_event}}] = P_{success} \times V_{\text{approved}} + (1 - P_{s
 Where:
 * $V_{\text{approved}} = \text{MarketCases} \times \text{ExpectedDrugPrice} \times \text{MarketShareMultiplier}$
 * $V_{\text{liquidation}} = \text{CashAndEquivalents} - \text{TotalLiabilities}$
+
+### D. Aviation Fleet Disruption & Route Capacity Optimizer (Use Case 19)
+Integrates flight orders (`data/aviation_industry/fleet_orders`), passenger metrics, and incident reports to identify operational bottlenecks for airlines:
+* Computes expected passenger load factors adjusted for safety incident shocks (e.g. fatal accidents) and fleet delivery delays:
+
+$$\text{LoadFactor}_{\text{shocked}} = \text{LoadFactor}_{\text{base}} \times \exp\left( - \lambda_{\text{safety}} \cdot \text{Fatalities} - \lambda_{\text{delay}} \cdot \frac{\text{DelayedFleetQuantity}}{\text{TotalFleetCapacity}} \right)$$
+
+* Generates route-by-route operating margin adjustments used to screen sector acquisition targets or project asset value write-downs.
+
+### E. Semiconductor Fab Capacity & Export Control Restriction Simulator (Use Case 20)
+Analyzes semiconductor fab sizes (`data/semiconductor_industry/fab_capacity`) and trade restrictions (`data/semiconductor_industry/export_controls`) to model chipmaker revenue contraction:
+* Traces linked customer domains to flag blockages on restricted nodes:
+
+$$\text{Projected Revenue Loss} = \sum_{e \in \text{RestrictedClients}} \text{SalesVolume}_e \times \text{SpotPrice}_{\text{chip}} \times \mathbb{I}(\text{ExportBlocked})$$
+
+* Declares Swan rules that dynamically restrict operational fab capacity utilization if supply chain nodes trigger foreign government entity list actions.
 
 ---
 
