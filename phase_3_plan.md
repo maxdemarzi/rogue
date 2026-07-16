@@ -454,7 +454,25 @@ $$0.0 \le h_c \le 0.85 \quad \text{(Maximum hedging cover constraint)}$$
 
 ---
 
-## 🌎 9. Macro Carry Trade & Hedging Solver (`macro_optimizer.py`)
+## 🏁 9. Competitor Alignment: Hebbia Credit Matrices & AlphaSense Document Diffing
+
+To match the core generative products of specialized tools (like Hebbia’s document-to-matrix query and AlphaSense’s MD&A redline diffs), we define the two final reasoning engines:
+
+### A. Hebbia Change-of-Control & Covenant Creditor Matrix Extractor
+For credit diligence (Use Case 8), we compile key covenant parameters across multiple target credit agreements (`data/corporate_bonds/`) to construct Hebbia-style comparable grids:
+* Extracted concepts: `Debt_Maturity_Walls`, `Change_of_Control_Thresholds`, `Interest_Rate_Floors`.
+* Evaluates dynamic constraints to verify if the combined deal leverage triggers covenant breach flags:
+
+$$\text{Covenant Breach} = \mathbb{I}\left( \text{CombinedLeverage} \ge \text{ChangeOfControlCovenantThreshold} \right)$$
+
+### B. AlphaSense MD&A Risk Redliner
+Automates semantic comparative auditing of annual reports (Use Case 7).
+* Compares risk disclosure sections across subsequent fiscal filings (`SECStatement_t` vs `SECStatement_t-1`) inside DuckDB.
+* Extracts sentence-level sentiment shifts and highlights new legal or operational disputes, scoring the severity delta of new risk items.
+
+---
+
+## 🌎 10. Macro Carry Trade & Hedging Solver (`macro_optimizer.py`)
 
 For global macro treasury analysis (Use Case 15), we build an optimal currency carry optimizer inside Swan's prescriptive solver to find the optimal allocation weights ($w_j$) across international sovereign yield curves:
 
@@ -483,7 +501,7 @@ w_alloc = carry_prob.solve_for(Country.w_alloc, type="cont", lower=-1.0, upper=1
 
 ---
 
-## 📈 10. Live Formula Excel Modeler (`live_modeler.py`)
+## 📈 11. Live Formula Excel Modeler (`live_modeler.py`)
 
 Generates living Excel spreadsheet outputs (Use Cases 11 & 13) using `openpyxl`.
 * **Zero Hardcoding Rule:** Projection cells must refer to formula equations in uppercase string parameters (e.g. `=B2*0.60`) rather than injecting static float results.
@@ -500,7 +518,7 @@ Generates living Excel spreadsheet outputs (Use Cases 11 & 13) using `openpyxl`.
 
 ---
 
-## 🔗 11. Source Citation Engine (`citation_engine.py`)
+## 🔗 12. Source Citation Engine (`citation_engine.py`)
 
 Binds cell data in web grids and pitchbooks to row indexes inside DuckDB:
 
