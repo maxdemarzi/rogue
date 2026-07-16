@@ -513,6 +513,20 @@ $$\Delta_{basis} = \frac{\text{ForwardRate}_{\text{actual}}}{\text{SpotRate}} \t
 
 Auto-flags riskless cross-currency arbitrage trades if basis spreads exceed 10 bps.
 
+### H. Diligent Board Poison Pill Defensive Dilution Simulator
+Matches Diligent corporate defense visualizers. Models the expected dilution shock to an activist hedge fund's stake if a target board deploys a Poison Pill Shareholder Rights trigger:
+
+$$\text{DilutedOwnership} = \frac{\text{CurrentShares}_{\text{activist}} + \text{TriggerShares}}{\text{TotalShares}_{\text{outstanding}} + \text{IssuedRightsShares}}$$
+
+Activists utilize this optimizer to identify their maximum ownership accumulation threshold before defensive board retaliation occurs.
+
+### I. Bloomberg CDS Market-Implied Probability of Default Solver
+Matches Bloomberg credit default swap risk dashboards (`CDSD`). Calculates continuous default probabilities directly from Credit Default Swap (CDS) spreads rather than historical ratings:
+
+$$PD_{\text{cds}} = 1 - e^{-\frac{\text{CDS\_Spread} \cdot T}{1 - \text{RecoveryRate}}}$$
+
+This allows credit analysts to cross-reference market pricing of credit risk against fundamentals inside DuckDB.
+
 ---
 
 ## 🌎 10. Macro Carry Trade & Hedging Solver (`macro_optimizer.py`)
