@@ -1,232 +1,276 @@
 # Rebuilding the Rogo AI Analyst - Phase 3: Advanced Reasoning Modules
 
-This document details the software design, mathematical formulations, and execution patterns for the **Advanced Reasoning Modules** in the rebuilt Rogo AI Analyst. These modules translate raw relational SQL and semantic data from the **DuckDB Warehouse** and **Swan Datalog Rules** into predictive intelligence, graph propagation models, and optimal decision support systems.
+This document details the software design, mathematical formulations, and execution patterns for the **Advanced Reasoning Modules** in the rebuilt Rogo AI Analyst. Rather than using external wrappers (like NetworkX, raw PyTorch Geometric, or SciPy), we leverage **Swan's native C++ reasoning engines** (`pyrel_duckdb.reasoners`) to run graph algorithms, Graph Neural Networks (GNNs), and mathematical programming directly over our DuckDB data warehouse.
 
 ---
 
 ## 📐 System Flow Overview
 
-The Advanced Reasoning Modules sit between the semantic data layer and Felix's client-facing query coordinator:
+All reasoning modules are built as declarative layers on top of the Swan semantic model:
 
 ```mermaid
 flowchart TD
-    DB[(rogue_finance.duckdb)] <--> Swan[Swan Semantic Rules Layer]
+    DB[(rogue_finance.duckdb)] <--> Model[Swan Relational Model]
     
-    subgraph Reasoning [Advanced Reasoning Layer]
-        NetworkX[Pathfinder & Contagion Simulator]
-        GNN[Bipartite GNN Valuation Predictor]
-        MILP[Mixed-Integer Target Optimizer]
-        Macro[FX & Inflation Arbitrage Engine]
+    subgraph Swan Reasoners [Swan C++ Reasoning Engines]
+        Graph[Graph Pathfinder & Centrality]
+        GNN[Predictive GNN Serving]
+        MIP[Prescriptive Solver: HiGHS]
     end
     
-    subgraph Output [Generative & Export Engines]
+    subgraph Deliverables [Generative & Export Engines]
         Excel[Live Excel Modeler]
         Memo[IC Pitchbook Generator]
     end
     
-    Swan -->|Clean Graph Edges| NetworkX
-    Swan -->|Node Features & Labels| GNN
-    GNN -->|Predicted Valuation Multiples| MILP
-    Swan -->|Macro Timelines| Macro
+    Model -->|Concept Mappings| Graph
+    Graph -->|Topology & Features| GNN
+    GNN -->|Served EV/Sales Predictions| MIP
     
-    MILP -->|Optimal Sourced Targets| Excel
-    MILP -->|Synergy Projections| Memo
+    MIP -->|Optimal Sourced Targets| Excel
+    MIP -->|Restructuring Synergy Metrics| Memo
 ```
 
 ---
 
-## 🌐 1. NetworkX Pathfinder & Contagion Simulator (`path_reasoner.py`)
+## 🌐 1. Swan Graph Pathfinder & Contagion Simulator (`path_reasoner.py`)
 
-This module implements structural graph algorithms to track B2B supply chain dependencies, NAICS sector contagion risk, and governance board interlocks.
+This module implements value chain analysis, customer-vendor reachability, and corporate board interlocks using Swan's graph reasoning engines.
 
-### A. Graph Ingestion and Namespace Alignment
-Data is loaded directly from DuckDB (`business_network_links`, `domain_partnerships`, `boardmembers`) into a NetworkX `DiGraph` representation.
-* **Namespace Suffixing:** To avoid collision between identical domain names and corporate entity names, entities are registered as `name (Company)` or `name (Domain)`.
-* **Edge Weights:** Sourced from `trade_credit` and `domain_partnerships` (e.g. transaction volumes, DSO days, or revenue exposure percentages).
-
-### B. Mathematical Algorithms
-
-#### 1. Distress Contagion Risk Score (PageRank Multiplier)
-We compute a personalized PageRank over the supply chain network, where the personalization vector $v$ is biased by the company's financial distress probability ($Altman\ Z\text{-}Score$ or $BankruptcyRisk.probability$):
-
-$$v_i = \max\left(0, \text{BankruptcyRisk.probability}_i \times \text{Leverage}_i\right)$$
-
-The PageRank vector $x$ is solved iteratively:
-
-$$x = d(W \cdot x) + (1-d)v$$
-
-Where:
-* $d = 0.85$ (damping factor).
-* $W$ is the column-normalized transition matrix of B2B supply links.
-
-#### 2. Downstream Credit write-off Propagation
-For any distressed target company $C_{distressed}$, we trace downstream dependencies to estimate aggregate trade credit write-off exposures ($Loss_i$) for every supplier $i$ in a multi-hop traversal:
-
-$$Loss_i = \sum_{h=1}^{H} \left( \gamma^h \times \prod_{e \in Path(i \to C_{distressed})} \text{RevenueShare}_e \times \text{DefaultProb}_{C_{distressed}} \times \frac{\text{DSO}_i}{365} \right)$$
-
-Where:
-* $H = 3$ (maximum contagion hop distance).
-* $\gamma = 0.9$ (attenuation factor per hop).
-* $\text{DSO}_i$ is the supplier's average Days Sales Outstanding from `trade_credit`.
-
-#### 3. Board Interlock Detection
-Identifies cliques and paths across interlocking directors to detect potential pathways for information migration:
+### A. Topology Construction
+We instantiate a Swan `Graph` topology binding custom ontology concepts representing B2B linkages:
 
 ```python
-import networkx as nx
+from pyrel_duckdb.reasoners.graph import Graph
 
-def detect_governance_cliques(G_board):
-    # Find all interlocking board cliques larger than 2 members
-    cliques = list(nx.enumerate_all_cliques(G_board.to_undirected()))
-    interlocked = [c for c in cliques if len(c) > 2]
-    return interlocked
+# Initialize the directed supply chain graph
+supply_graph = Graph(
+    model,
+    directed=True,
+    weighted=True,
+    node_concept=Company,
+    edge_concept=SupplierRelation, # supplies_to relationship mapping
+    edge_src_relationship=SupplierRelation.supplier,
+    edge_dst_relationship=SupplierRelation.customer,
+    edge_weight_relationship=SupplierRelation.revenue_share
+)
+```
+
+### B. Core Operations
+
+#### 1. PageRank Distress Contagion (Use Case 12)
+Detects central systemic nodes in the supply chain exposed to distress propagation. We invoke Swan's native PageRank:
+
+```python
+# Compute PageRank scores on the supplies graph
+pagerank_scores = supply_graph.pagerank(
+    damping_factor=0.85, 
+    max_iter=20, 
+    tolerance=1e-6
+)
+
+# Query PageRank nodes and extract to DataFrame
+centrality_df = model.where(pagerank_scores).select(
+    pagerank_scores["node"].id.alias("company_id"),
+    pagerank_scores.score.alias("distress_influence")
+).to_df()
+```
+
+#### 2. Downstream Reachability & WCC (Use Case 4 & 12)
+Traces if a systemic vendor shock propagates down the supply chain to a specific customer node.
+* **C++ Cache Optimization:** We pass `use_cache=True` to activate Swan's C++ transitive reachability caches (`TransitiveReachabilityCache`), bypassing expensive recursive SQL CTE processing.
+
+```python
+# Check reachability between two companies
+reachable_rel = supply_graph.reachable(CompanyA, CompanyB, use_cache=True)
+```
+
+To partition the value-chain into isolated supplier clusters, we execute Weakly Connected Components:
+
+```python
+wcc_rel = supply_graph.weakly_connected_component(
+    use_cache=True,
+    cache_table="supplier_relation",
+    cache_src="supplier_id",
+    cache_tgt="customer_id"
+)
+```
+
+#### 3. Board Interlock Detection (Use Case 14)
+To detect interlocking directorship networks, a bipartite graph mapping `Person` nodes sitting on `Board` entities is constructed, allowing direct extraction of interlocking pathways:
+
+```python
+board_graph = Graph(
+    model,
+    directed=False,
+    node_concept=Person,
+    edge_concept=BoardMember,
+    edge_src_relationship=BoardMember.director,
+    edge_dst_relationship=BoardMember.company
+)
+
+# Extract degree centrality to locate high-degree directors
+director_degrees = board_graph.degree(of=Person)
 ```
 
 ---
 
-## 🤖 2. Bipartite GNN Valuation Predictor (`gnn_model.py`)
+## 🤖 2. Swan Predictive GNN Servicer (`gnn_model.py`)
 
-This module builds a heterogeneous GNN using PyTorch Geometric (PyG) to predict target firm valuation multiples (EV/Sales and EV/EBITDA) by merging relational company metrics with investment networks.
+This module uses Swan's GNN predictive reasoning engine to forecast company valuation multiples (EV/Sales and EV/EBITDA) directly inside DuckDB.
 
-### A. Graph Data Schema (`HeteroData`)
-* **Node Types:**
-  * `company`: Features = `[Revenue, EBITDA_Margin, Debt_to_Equity, Altman_Z, CEO_Salary_Ratio, Piotroski_F_Score, ESG_Score]`. Dimension: $F_c = 7$.
-  * `investor`: Features = `[Total_AUM, Institutional_Weight, Turnover_Rate]`. Dimension: $F_i = 3$.
-* **Edge Types:**
-  * `(company, supplies_to, company)`
-  * `(investor, holds, company)`: Edge attribute = `[Shares_Held, Value_USD]`.
-
-### B. Heterogeneous Convolution Architecture
-A two-layer Heterogeneous Graph Attention Network (`HANConv`) or GraphSAGE variant compiles features:
+### A. Feature Ingestion & Normalization (`PropertyTransformer`)
+We define a property transformer to standardize categorical sectors, continuous financial ratios, and news sentiment headlines into tensor representations:
 
 ```python
-import torch
-import torch.nn as nn
-from torch_geometric.nn import HeteroConv, SAGEConv, GATConv
+from pyrel_duckdb.reasoners.predictive import PropertyTransformer
 
-class HeteroValuationGNN(nn.Module):
-    def __init__(self, metadata, hidden_channels, out_channels):
-        super().__init__()
-        # First Heterogeneous Layer
-        self.conv1 = HeteroConv({
-            ('company', 'supplies_to', 'company'): SAGEConv((-1, -1), hidden_channels),
-            ('investor', 'holds', 'company'): GATConv((-1, -1), hidden_channels, heads=2, concat=False),
-        }, agg='sum')
-        
-        # Second Heterogeneous Layer
-        self.conv2 = HeteroConv({
-            ('company', 'supplies_to', 'company'): SAGEConv((-1, -1), hidden_channels),
-            ('investor', 'holds', 'company'): SAGEConv((-1, -1), hidden_channels),
-        }, agg='sum')
-        
-        # Output Projection MLP
-        self.fc = nn.Sequential(
-            nn.Linear(hidden_channels, 32),
-            nn.ReLU(),
-            nn.Linear(32, out_channels) # Out maps to EV/Sales or EV/EBITDA multiples
-        )
-
-    def forward(self, x_dict, edge_index_dict):
-        # Layer 1
-        x_dict = self.conv1(x_dict, edge_index_dict)
-        x_dict = {key: torch.relu(x) for key, x in x_dict.items()}
-        
-        # Layer 2
-        x_dict = self.conv2(x_dict, edge_index_dict)
-        x_dict = {key: torch.relu(x) for key, x in x_dict.items()}
-        
-        # Output multiple for companies
-        return self.fc(x_dict['company'])
+pt = PropertyTransformer(
+    category=[Company.sector, Company.credit_rating],
+    continuous=[
+        Company.revenue, 
+        Company.ebitda_margin, 
+        Company.debt_to_equity, 
+        Company.altman_z_score,
+        Company.free_cash_flow_quality_ratio
+    ],
+    text=[Company.latest_headline] # Normalized via local sentence-transformers
+)
 ```
 
-### C. Constraint-Satisfaction Loss (Łukasiewicz soft-logic loss)
-To ensure the predicted valuation multiples do not violate physical bounds (e.g. ensuring a company's predicted EV is higher than its net cash, or enforcing sector-level bounds derived from ratings thresholds), we implement a hybrid loss function:
+### B. GNN Configuration & Servicing
+We partition our historical fundamentals datasets into train/validation queries:
 
-$$\mathcal{L} = \mathcal{L}_{MSE} + \lambda_1 \mathcal{L}_{lower\_bound} + \lambda_2 \mathcal{L}_{upper\_bound}$$
+```python
+from pyrel_duckdb.semantics.reasoners.predictive import GNN
 
-Where the logic bounds are defined as soft penalties:
+# Define query splits
+TrainQuery = select(Company.id, Company.target_multiple).where(Company.is_train == True)
+ValQuery = select(Company.id, Company.target_multiple).where(Company.is_val == True)
 
-$$\mathcal{L}_{lower\_bound} = \sum_{j} \max\left(0, \text{NetDebt}_j - (\hat{y}_j \times \text{Sales}_j) \right)^2$$
+# Build the GNN
+gnn = GNN(
+    graph=supply_graph,
+    property_transformer=pt,
+    train=TrainQuery,
+    validation=ValQuery,
+    task_type="regression", # Predict continuous multiples
+    hidden_channels=16,
+    n_epochs=50,
+    lr=0.01
+)
 
-$$\mathcal{L}_{upper\_bound} = \sum_{j} \max\left(0, (\hat{y}_j - \text{MaxSectorMultiple}_{\text{rating}}) \times \text{Sales}_j \right)^2$$
+# Train GNN locally (PyG back-end) and compile to native C++ ONNX model
+gnn.fit()
+```
+
+### C. Native In-Database Inference (C++ ONNX Runtime)
+Once trained, the GNN weights are saved as an ONNX artifact. Serve predictions natively inside DuckDB queries to bypass Python transfer overhead:
+
+```python
+# Serving predictions on target PE screening candidates
+Company.predicted_multiples = gnn.predictions(domain=ScreeningTestQuery)
+
+# Select GNN projections in-place
+valuation_df = select(
+    Company.id,
+    Company.predicted_multiples.probs.alias("predicted_multiple")
+).where(Company.predicted_multiples).to_df()
+```
+
+### D. Model Explainability Views
+For investment diligence reporting (Use Case 10), we query Swan's C++ GNN explainability metrics (`ExplainNode` and `ExplainEdge`) to audit what features drove a specific valuation:
+
+```python
+ExplainNode, ExplainEdge = gnn.explain(target_id="AAPL", top_k=5)
+
+# Query most important feature contributions
+node_attributions = select(ExplainNode.node, ExplainNode.weight).to_df()
+edge_attributions = select(ExplainEdge.src, ExplainEdge.dst, ExplainEdge.weight).to_df()
+```
 
 ---
 
-## 🎯 3. SciPy Mixed-Integer Target Optimizer (`optimizer.py`)
+## 🎯 3. Swan Prescriptive Target Optimizer (`optimizer.py`)
 
-This module executes optimal PE acquisition/LBO sourcing targets selection. It identifies the optimal subset of companies to acquire under fixed capital budgets.
+This module uses Swan's prescriptive solver wrapper (`pyrel_duckdb.reasoners.prescriptive`) to compile Linear Programs (LP) and Mixed-Integer Programs (MIP) directly over the DuckDB engine, solving them using the local C++ **HiGHS** solver.
 
-### A. Decision Variables
-Let $x_i \in \{0, 1\}$ be the binary decision variable indicating whether target company $i$ is selected for acquisition.
-
-### B. Mathematical Formulation
-
-#### 1. Objective Function
-Maximize the aggregate projected Net Income of the acquired portfolio, factoring in expected post-restructuring overhead synergies (e.g., cutting bloated executive overhead sourced from `ceo_salaries`):
-
-$$\max_x \sum_{i=1}^{N} x_i \times \left( \text{NetIncome}_i + \text{CEO\_Pay}_i \times \left(1 - \frac{1}{\text{IndustryAveragePayRatio}}\right) \right)$$
-
-#### 2. Constraints
-
-* **Capital Budget Constraint:**
-  The total purchase price (derived from predicted GNN multiples) must not exceed our maximum allocation budget $B$:
-
-$$\sum_{i=1}^{N} x_i \times \left( \text{Predicted\_Multiple}_i \times \text{Sales}_i \right) \le B$$
-
-* **Target Acquisition Count:**
-  Select exactly $K$ targets:
-
-$$\sum_{i=1}^{N} x_i = K$$
-
-* **Sector Diversity Restriction:**
-  To prevent sector concentration risk, limit the number of acquisitions in any sector $s$ to $M_s$:
-
-$$\sum_{i \in \text{Sector}_s} x_i \le M_s \quad \forall s$$
-
-* **Risk-Zone Exclusions (Hard Constraints):**
-  A target cannot be selected if it is classified in the Altman Z-score distress zone or has active patent litigation:
-
-$$x_i = 0 \quad \forall i \in \{j \mid \text{AltmanZ}_j < 1.81 \text{ or defendant\_status}_j = \text{True}\}$$
-
-### C. SciPy MILP Solver Ingestion
-The variables are passed to `scipy.optimize.milp` using a linear constraint matrix formulation:
+### A. Problem Context & Variable Declarations
+We instantiate a prescriptive context and define binary variables indicating whether target firms are selected for acquisition:
 
 ```python
-import numpy as np
-from scipy.optimize import milp, Bounds, LinearConstraint
+from pyrel_duckdb.reasoners.prescriptive import Problem, implies
+from pyrel_duckdb.std import aggregates as aggs
 
-def solve_lbo_selection(net_incomes, costs, sector_matrix, max_sectors, K, risk_flags):
-    num_vars = len(net_incomes)
-    
-    # 1. Objective Vector (Minimize negative income to maximize)
-    c = -np.array(net_incomes)
-    
-    # 2. Variable Bounds (Binary: 0 or 1)
-    bounds = Bounds(np.zeros(num_vars), np.ones(num_vars))
-    integrality = np.ones(num_vars) # 1 indicates integer constraint
-    
-    # 3. Capital Cost Constraint (Cost <= Budget)
-    # A_ub cost matrix bounds
-    # 4. Count Constraint (Sum == K)
-    # 5. Risk exclusions (Hard bounds set to 0)
-    # 6. Sector limits
-    
-    # Execute solver
-    # res = milp(c=c, integrality=integrality, bounds=bounds, constraints=constraints)
-    # return res.x
+problem = Problem(model, Float)
+
+# Declare binary decision variables (populate=True writes output back to database)
+x_acquire = problem.solve_for(Company.x_acquire, type="bin", populate=True)
+```
+
+### B. Objective Function
+Maximize the aggregate projected portfolio Net Income, including cost savings generated by optimizing executive pay overhead:
+
+```python
+problem.maximize(
+    aggs.sum(
+        Company.x_acquire * (Company.net_income_loss + Company.ceo_compensation * 0.3)
+    )
+)
+```
+
+### C. Sourcing Constraints & Big-M Implications
+Swan compiles these constraints directly into HiGHS matrices:
+
+```python
+# 1. Sourcing Quantity (Select exactly K targets)
+problem.satisfy(aggs.sum(Company.x_acquire) == K)
+
+# 2. Capital Allocation Limit (Total Cost <= Budget)
+problem.satisfy(
+    aggs.sum(Company.x_acquire * Company.predicted_multiples.probs * Company.revenue) <= Budget
+)
+
+# 3. Sector Concentration Constraints (Max 2 acquisitions per sector)
+problem.satisfy(
+    aggs.sum(Company.x_acquire).per(Company.sector) <= 2
+)
+
+# 4. Solvency Exclusion (Exclude Altman Distress candidates)
+problem.satisfy(
+    model.require(implies(Company.altman_z_score < 1.81, Company.x_acquire == 0))
+)
+
+# 5. Litigation Exclusions (Exclude defendants)
+problem.satisfy(
+    model.require(implies(Company.is_litigation_defendant == True, Company.x_acquire == 0))
+)
+```
+
+### D. Solving & Value Retrieval
+We execute the solver locally:
+
+```python
+# Run the local C++ HiGHS solve
+problem.solve()
+
+# Check solver results
+solve_stats = problem.solve_info()
+print("Solve Termination:", solve_stats.termination_status) # e.g. Optimal
+print("Optimal Objective:", solve_stats.objective_value)
 ```
 
 ---
 
 ## 📈 4. Live Formula Excel Modeler (`live_modeler.py`)
 
-This engine implements the dynamic spreadsheet generation requirements (Use Case 11 & 13) using `openpyxl`.
-* **Zero Hardcoding Rule:** Financial projection worksheets must write formulas in uppercase cell references instead of static computed float lines.
-* **Dependency Tree:** Traces baseline inputs to construct projection columns:
+Generates living Excel spreadsheet outputs (Use Cases 11 & 13) using `openpyxl`.
+* **Zero Hardcoding Rule:** Projection cells must refer to formula equations in uppercase string parameters (e.g. `=B2*0.60`) rather than injecting static float results.
+* **Dependency Tree:** Traces inputs dynamically:
 
 | Output Row | Cell Label | Excel Formula |
 | :--- | :--- | :--- |
-| **Row 2** | `Purchase Price` | `$1,000,000,000` (Hardcoded input parameter) |
+| **Row 2** | `Purchase Price` | `B2` (Base value sourced from GNN prediction) |
 | **Row 3** | `Debt Contribution` | `=B2 * 0.60` (60% LBO Debt capacity) |
 | **Row 4** | `Sponsor Equity` | `=B2 - B3` (Remaining Equity financing) |
 | **Row 5** | `Year 1 Revenue` | `=PriorYearSales * (1 + GrowthRate)` |
@@ -237,10 +281,7 @@ This engine implements the dynamic spreadsheet generation requirements (Use Case
 
 ## 🔗 5. Source Citation Engine (`citation_engine.py`)
 
-To ensure absolute auditability (Use Case 10 & 11), any derived fact presented in the web UI or generated IC pitchbooks must link back to its exact database origin in `rogue_finance.duckdb`.
-
-### A. Traceability Metadata
-The engine maintains a citation registry index mapping extracted variables to a standard locator schema:
+Binds cell data in web grids and pitchbooks to row indexes inside DuckDB:
 
 ```json
 {
@@ -254,9 +295,6 @@ The engine maintains a citation registry index mapping extracted variables to a 
   "sql_locator": "SELECT operating_income_loss FROM sec_financials_short_financials_df WHERE ticker='AAPL' AND fiscal_year=2026"
 }
 ```
-
-### B. User Citation Rendering
-In reports or memos, citations are injected as superscript tags: `Apple achieved operating profits of $114.5B [1]`. The index mapping maps `[1]` directly to the `sql_locator` query, allowing one-click database audits.
 
 ---
 
@@ -280,10 +318,10 @@ If the net carry yield remains above a threshold (e.g. 200 bps), the simulator t
 
 ---
 
-## 🧪 Phase 2 & 3 Verification Plan
+## 🧪 Phase 3 Verification Plan
 
-The test runner `verify_reasoning.py` executes these validation pipelines:
-1. **Pathfinder Isolation:** Checks that PageRank scores match pre-calculated metrics on sample graphs.
-2. **GNN Output Bounds:** Runs test input through `HeteroValuationGNN` and asserts that loss penalties are non-zero if output exceeds rating sector caps.
-3. **MILP Optimality check:** Runs a mock sourcing problem with known optimal solution and checks that the SciPy MILP output selects the correct target nodes.
-4. **Excel live formula parser:** Checks generated spreadsheet worksheets to assert that no raw numbers exist in formula cells.
+The test suite `verify_reasoning.py` verifies the Swan solvers:
+1. **Graph Pathfinder Isolation:** Verifies that reachability checks compile correctly and yield expected binary paths.
+2. **GNN Serving check:** Asserts that predictions return valid float arrays via local ONNX runtime.
+3. **MIP Convergence test:** Formulates a mock subset allocation and verifies that HiGHS returns the global optimum matching hand-computed bounds.
+4. **Excel live formula check:** Validates that generated LBO sheets do not contain static numeric values in formula fields.
