@@ -11,7 +11,7 @@ Based on database structure, cardinality checks, and comprehensive **Use Case Pl
 * **Phase 1 (Active): Complete Swan Ontology mapping all 50 datasets (`ontology.py`)**
 * **Phase 2:** Advanced Reasoning Modules (`path_reasoner.py`, `gnn_model.py`, `optimizer.py`)
 * **Phase 3: Swan Rules & Financial Calculations (`rules.py`)**
-  * *Purpose:* Write declarative Datalog rules to automate **225 financial, leverage sensitivity, capital allocation, cash flow conversion, and market valuation multiples** bridging the gap between raw data and frontier intelligence.
+  * *Purpose:* Write declarative Datalog rules to automate **240 financial, leverage sensitivity, capital allocation, cash flow conversion, and market valuation multiples** bridging the gap between raw data and frontier intelligence.
 * **Phase 4:** Felix Agent Coordinator & Sandboxed Execution (`agent_pipeline.py`)
 * **Phase 5:** Web Server & Glassmorphic Dashboard UI (`web_server.py` & `web_app/`)
 
@@ -282,7 +282,7 @@ We define the structural relationships linking every concept back to its key dim
 
 ## 🧬 Phase 3: Swan Rules & Financial Calculations
 
-We define **225 declarative Datalog derived rules** inside `rules.py` categorized across 15 business domains:
+We define **240 declarative Datalog derived rules** inside `rules.py` categorized across 16 business domains:
 
 ### 1. DuPont Analysis & Profitability Rules (15 Rules)
 * **`net_profit_margin`**: `net_income_loss / total_revenue`
@@ -539,6 +539,23 @@ We define **225 declarative Datalog derived rules** inside `rules.py` categorize
 * **`economic_freedom_trade_freedom_premium`**: `economic_freedom_rank - SovereignRating.local_rating`
 * **`retained_earnings_growth_yoy`**: `(retained_earnings_t - retained_earnings_t_minus_1) / retained_earnings_t_minus_1`
 
+### 16. Economic Value Added (EVA), Asset Quality & Impairment Alerting (15 Rules)
+* **`roic_wacc_spread`**: `return_on_invested_capital_roic - wacc`
+* **`economic_value_added_eva_estimate`**: `roic_wacc_spread * (stockholders_equity + total_debt - cash_and_equivalents)`
+* **`goodwill_to_assets`**: `goodwill / total_assets`
+* **`intangibles_to_assets`**: `intangible_assets / total_assets`
+* **`is_goodwill_impairment_threat`**: Unary alert flagging post-acquisition companies facing earnings deceleration alongside heavy goodwill density.
+* **`dividend_yield_to_wacc_ratio`**: `dividend_yield / wacc`
+* **`fcf_yield_to_cost_of_equity_spread`**: `fcf_yield - cost_of_equity_capm`
+* **`operating_cash_to_working_capital`**: `net_cash_operating / working_capital`
+* **`retained_earnings_to_total_liabilities`**: `retained_earnings / total_liabilities`
+* **`cash_to_total_assets`**: `cash_and_equivalents / total_assets`
+* **`real_risk_free_rate`**: `risk_free_rate - macro_indicator_inflation_rate`
+* **`default_risk_premium_spread`**: `corporate_bond_spread - sovereign_spread_premium`
+* **`tangible_assets_to_total_liabilities`**: `(total_assets - intangible_assets) / total_liabilities`
+* **`cash_flow_to_reinvestment_ratio`**: `net_cash_operating / capital_expenditures`
+* **`sustainable_reinvestment_spread`**: `sustainable_reinvestment_rate - wacc`
+
 ---
 
 ## 🧪 Phase 1 & 3 Verification Plan
@@ -546,6 +563,6 @@ We define **225 declarative Datalog derived rules** inside `rules.py` categorize
 ### Automated Verification
 The test runner `verify_ontology.py` will assert:
 1. Clean compilation of all 54 concepts.
-2. Ingestion count checks for all 229 tables.
+2. Ingestion count checks of all 229 tables.
 3. Verification of derived rules (e.g. asserting computed values for ROE/Current Ratios match manually calculated values from raw SQL table data).
 4. Ingestion speeds remain **under 5 seconds** (raw daily pricing timelines excluded).
