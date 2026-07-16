@@ -190,6 +190,17 @@ To fully capture institutional buy-side interest, we implement six highly respon
   * Displays a side-by-side matching grid highlighting matching confidence scores.
   * Provides checkbox overrides to let analysts verify and merge fuzzy links manually, instantly correcting overlapping B2B graph pathfinder edges.
 
+### K. M&A Accretion/Dilution Deal Boundary Contour Map
+* **How it works:** Visualizes transactional structures for corporate M&A deal teams:
+  * Displays a 2D interactive heatmap plotting Purchase Premium % (X-axis) against Debt/Equity Financing Mix (Y-axis).
+  * A bright contour line marks the accretion boundary (where combined EPS equals acquirer stand-alone EPS).
+  * Users can drag a crosshair around the map to instantly see structural deal outcomes (accretive zones in green, dilutive in red).
+
+### L. GNN Explainability Force-Directed Attribution Graph
+* **How it works:** Audits the machine learning model's valuation multiple outputs:
+  * Renders a force-directed supply chain network using D3.js where nodes are sized by Merton default risk, and edges are scaled by GNN importance weights ($w_{edge}$).
+  * Hovering over any company node displays a glassmorphic radar chart detailing feature contribution weights (e.g. cash flow, leverage, CEO pay ratios).
+
 ---
 
 ## 🧪 Phase 5 Verification Plan
