@@ -75,48 +75,114 @@ class SecureASTValidator(ast.NodeVisitor):
 Nexus compiles incoming queries into specific playbook pipelines, querying the DuckDB/Swan layer and outputting target spreadsheets, IC memos, or graph visualizations. The playbooks are categorized and structured below:
 
 ### 1. Earnings Comp & Consensus Analysis
-* *Pipeline:* Joins `earnings_estimates` with daily `ohlcv` price series matching filing dates. Calculates post-release stock price drift.
-* *Output:* Markdown table comparing actual EPS vs. analyst consensus estimates paired with 5-day post-earnings volatility.
+* **Business Case & Rationale:**
+  Public equity analysts need to monitor consensus estimates (EPS, Revenue) and quickly cross-reference them with actual performance and short-term price reactions to spot earnings surprises and sentiment shifts.
+* **Pipeline Mechanics:**
+  1. Queries target consensus parameters from `earnings_estimates`.
+  2. Joins estimates with actual values from SimFin fundamentals and daily closing prices in `ohlcv`.
+  3. Computes the post-earnings stock price drift over a 5-day trading window.
+* **Output:**
+  A tabular summary detailing consensus estimates vs. actual results, surprise percentages, and a timeline plot of post-earnings volatility.
 
 ### 2. Public & Private Company Sourcing & Screening
-* *Pipeline:* Filters private VC companies in `startup_vc` and correlates them with overlapping board member seats in `board_members`.
-* *Output:* Network graph of co-directorship networks linking PE acquirers to startup founders.
+* **Business Case & Rationale:**
+  Private equity and VC associates screen target databases to map funding histories and executive board interlocks to find deal sourcing candidates.
+* **Pipeline Mechanics:**
+  1. Queries start-up funding rounds in `startup_vc` by round size, valuation, and funding stage.
+  2. Maps Fortune 100 interlocking board directors from `board_members` sitting on peer boards.
+  3. Visualizes director co-membership paths using Swan Graph degree tracking.
+* **Output:**
+  An interactive director interlock network diagram linking PE/VC investors to target company founders.
 
 ### 3. Credit Analysis & Debt Due Diligence
-* *Pipeline:* Matches corporate bonds coupons in `corporate_bonds` with issuer rating histories in `corporate_credit_ratings`.
-* *Output:* Maturity wall timeline chart grouping debt structures by credit quality grade.
+* **Business Case & Rationale:**
+  Credit research analysts stress-test corporate debt structures, coupon rates, and ratings to predict impending default risks or maturity wall refinancing constraints.
+* **Pipeline Mechanics:**
+  1. Extracts bond coupon structures and maturity dates from `corporate_bonds`.
+  2. Correlates issuers with historical corporate rating paths in `corporate_credit_ratings`.
+  3. Groups debt profiles by maturity years to locate credit walls.
+* **Output:**
+  A structured maturity wall timeline chart highlighting outstanding debt volumes segmented by credit quality.
 
 ### 4. Supply Chain Contagion & Macro Exposure
-* *Pipeline:* Joins `business_network_links` with daily commodity spot prices to trace cost exposure paths.
-* *Output:* Direct risk allocation list mapping supplier cost shocks directly to customer cost of goods sold (COGS).
+* **Business Case & Rationale:**
+  Firms with high customer concentration or commodity dependency face margin compression if their supply chains break. Risk managers map these upstream supply lines to quantify exposure.
+* **Pipeline Mechanics:**
+  1. Joins the domain linkages in `business_network_links` with daily commodity spot rates in `commodity_prices`.
+  2. Traces multi-hop B2B supplies to isolate supplier dependency ratios.
+  3. Maps cost shocks from raw commodities to finished product cost structures.
+* **Output:**
+  A value-chain risk report displaying direct exposure to commodity price shocks across suppliers.
 
 ### 5. Distress & Layoff Monitoring
-* *Pipeline:* Aggregates monthly layoff timelines in `corporate_layoffs` and correlates them with default probabilities in `bankruptcy_risk`.
-* *Output:* Historical distress volatility charts plotted against headcount reductions.
+* **Business Case & Rationale:**
+  Early indicators of operational distress (headcount reductions, layoff events) precede formal default filings. Credit desks monitor these layoff curves to hedge loan portfolios.
+* **Pipeline Mechanics:**
+  1. Aggregates monthly layoff counts and percentages from `corporate_layoffs`.
+  2. Cross-references headcount cuts with default probability changes in `bankruptcy_risk`.
+  3. Plats daily volatility changes from `implied_volatility` around layoff events.
+* **Output:**
+  A distress dashboard displaying layoff timelines correlated with default probability curves.
 
 ### 6. Broker Research & Ratings Synthesis
-* *Pipeline:* Runs sentiment parsing on headlines in `financial_news` and aggregates rating updates (upgrades/downgrades).
-* *Output:* Consensus recommendation distribution tracker (Buy/Hold/Sell) with sentiment weight overlays.
+* **Business Case & Rationale:**
+  Buy-side PMs compile sell-side consensus ratings (Buy/Hold/Sell) and broker research price targets to identify market sentiment anomalies.
+* **Pipeline Mechanics:**
+  1. Extracts ratings adjustments and recommendation dates from `financial_news`.
+  2. Performs sentiment weight scoring using `financial_phrasebank` sentiment models.
+  3. Computes the consensus target price spread relative to the actual spot trading price.
+* **Output:**
+  A broker ratings summary chart detailing target price spreads and sentiment distributions.
 
 ### 7. Generative Grid & Multi-Document Comparison
-* *Pipeline:* Compiles comparative balance sheets and income metrics across targeted peer ticker symbols.
-* *Output:* Side-by-side comparative table (Generative Grid) detailing margins, leverage, and cash conversion cycles.
+* **Business Case & Rationale:**
+  PE associates compare dozens of peer SEC filings (10-K, 10-Q) side-by-side to benchmark operational metrics (operating margins, working capital cycles).
+* **Pipeline Mechanics:**
+  1. Compiles SEC balance sheet and income metrics from `sec_financials` across peer tickers.
+  2. Normalizes financial variables (standardizing concept keys like `net_income` or `total_assets`).
+  3. Formulates a comparable comparables grid in-memory.
+* **Output:**
+  An interactive side-by-side comparable grid (Generative Grid) displaying margins, leverage, and liquidity metrics.
 
 ### 8. Virtual Data Room (VDR) & M&A Covenant Diligence
-* *Pipeline:* Scans patent litigation histories in `patent_litigation` and joins target debt terms.
-* *Output:* Covenant diligence dashboard highlighting change-of-control risks or outstanding litigation damages.
+* **Business Case & Rationale:**
+  During M&A diligence, deal teams audit target litigation histories and high-yield covenants to assess technical default triggers.
+* **Pipeline Mechanics:**
+  1. Scans target litigation histories and outstanding damages in `patent_litigation`.
+  2. Compiles high-yield covenant limits from `corporate_bonds` credit structures.
+  3. Computes leverage ratios to flags potential covenant violations.
+* **Output:**
+  A covenant compliance checklist highlighting outstanding liabilities and covenant breach flags.
 
 ### 9. Public Equity Valuation Multiples Comps Generator
-* *Pipeline:* Pulls daily capitalization weights from `ohlcv` and divides by fundamentals margins (sales, EBITDA).
-* *Output:* Trading multiples peer comparables table (P/E, EV/Sales, EV/EBITDA).
+* **Business Case & Rationale:**
+  Public equity PMs build comparable valuation models (comps tables) plotting trading multiples (P/E, EV/Sales, EV/EBITDA) against revenue growth to find arbitrage targets.
+* **Pipeline Mechanics:**
+  1. Queries daily capitalization weights (StockPrice * SharesOutstanding) from `ohlcv`.
+  2. Divides capitalization weights by fundamental EBITDA and sales margins in SimFin.
+  3. Compares multiples against peer sector medians.
+* **Output:**
+  A standard comparables comps table detailing P/E, P/S, EV/EBITDA, and gross margin trends.
 
 ### 10. IC Memo & Pitchbook Generator
-* *Pipeline:* Aggregates transaction metadata from `mergers_acquisitions` and formats target income sheets with direct filing citations.
-* *Output:* Downloadable Word/PDF Investment Committee Memo pre-populated with citation tags.
+* **Business Case & Rationale:**
+  Deal teams generate formatted, board-ready investment committee memos containing sentence-level citations to back up target acquisition metrics.
+* **Pipeline Mechanics:**
+  1. Extracts transaction variables from `mergers_acquisitions` and target financials in SimFin.
+  2. Formulates a structured document layout utilizing preset paragraphs and tables.
+  3. Injects citation tags referencing the exact table row index inside `rogue_finance.duckdb`.
+* **Output:**
+  A downloadable Word/PDF Investment Committee pitchbook containing inline source citations.
 
 ### 11. Auditable Live-Formula Excel Modeler
-* *Pipeline:* Scribes fundamental variables into an OpenPyXL workbook context.
-* *Output:* Downloadable `.xlsx` sheet built using cell-to-cell math formulas (`=SUM(B2:B5)`) instead of hardcoded numbers.
+* **Business Case & Rationale:**
+  Investment analysts require spreadsheets containing live, audit-ready cell formulas (e.g. projecting future cash flows and margins) rather than static, hardcoded numbers.
+* **Pipeline Mechanics:**
+  1. Queries target historical balance sheet and income lines.
+  2. Scribes baseline values into an OpenPyXL workbook structure.
+  3. Injects uppercase referencing formulas (e.g., `=B5*(1+C5)`) across forecast columns.
+* **Output:**
+  A downloadable `.xlsx` model pre-loaded with dynamic projection formulas.
 
 ---
 
@@ -210,7 +276,7 @@ Nexus compiles incoming queries into specific playbook pipelines, querying the D
 * **Output:**
   A global trade risk map detailing customer revenue blockages and unutilized fab capacity costs.
 
-### ⚖️ 21. Executive Pay-for-Performance & TSR Alignment Solver
+### ⚖️ 21. Executive Pay-for-Performance & TSR Alignment Elasticity Solver
 * **Business Case & Rationale:**
   Activist hedge funds look for corporate governance targets where board members approve massive executive pay packages despite declining total shareholder returns (TSR).
 * **Pipeline Mechanics:**
@@ -327,6 +393,23 @@ To match the core generative products of specialized tools (like Hebbia’s docu
   Calculates continuous default probabilities directly from Credit Default Swap (CDS) spreads and recovery rates.
 * **Output:**
   A credit risk dashboard comparing fundamentals-based default risk (Merton) against CDS-implied default curves.
+
+### J. PitchBook Co-Investment Syndicate Pathfinder
+* **Business Case & Rationale:**
+  Deal sourcing teams co-investing in private startups analyze syndicate networks to target co-investment leads or find friendly co-investors.
+* **Pipeline Mechanics:**
+  Calculates the Jaccard similarity index ($J$) of co-investments between VC funds over historical funding rounds:
+  $$J(A, B) = \frac{|\text{Portfolio}_A \cap \text{Portfolio}_B|}{|\text{Portfolio}_A \cup \text{Portfolio}_B|}$$
+* **Output:**
+  A VC co-investment cluster map displaying high-similarity syndicate partners.
+
+### K. Bloomberg Black-Litterman Sovereign Portfolio Allocation Optimizer
+* **Business Case & Rationale:**
+  Sovereign wealth funds and global macro treasuries optimize foreign sovereign bond allocations by combining baseline yield variances with active macro views.
+* **Pipeline Mechanics:**
+  Solves the Black-Litterman asset estimation algorithm inside Swan's prescriptive solver, applying yield covariance matrices and linear FX return constraints.
+* **Output:**
+  An optimal sovereign asset weights table displaying allocation adjustments and expected portfolio return metrics.
 
 ---
 
