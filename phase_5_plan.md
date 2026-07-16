@@ -4,7 +4,7 @@ This document details the frontend visual design, interactive visualizers, backe
 
 ---
 
-## 🎨 1. Premium Visual Design System (`styles.css`)
+## 📐 1. Premium Visual Design System (`styles.css`)
 
 To establish a premium, state-of-the-art console interface that wows institutional financial clients, we implement a cohesive glassmorphic design system:
 
@@ -58,7 +58,7 @@ To surpass specialized tools, the web terminal renders tailored components based
 * **Interactivity:** Hovering over an M&A covenant metric (e.g. change-of-control threshold) displays a tooltip containing the exact SEC statement paragraph. Clicking the metric opens the document viewer scrolled directly to the source row index in DuckDB.
 
 ### B. AlphaSense-Style Risk Disclosure Redliner
-* **How it beats competitors:** Side-by-side text comparisons with automated sentiment divergence indicators.
+* **How it beats competitors:** Split-screen comparison window highlighting deleted, modified, or added risk paragraphs.
 * **Interactivity:** Deleted paragraphs are highlighted in hot-pink redlines, and newly inserted risk factors are highlighted in neon-green. A divergence indicator flags if the company added litigation risks that were unmentioned in prior files.
 
 ### C. PitchBook-Style Interactive Board Pathfinder
@@ -126,6 +126,37 @@ To maintain auditability, when an analyst hovers over any metrics in the comps g
 | SQL Locator: SELECT operating_income_loss FROM sec_financials_df WHERE row=9482 |
 +---------------------------------------------------------------------------------+
 ```
+
+---
+
+## 🚀 6. Premium "Wow Factor" Interactive Features
+
+To fully capture institutional buy-side interest, we implement four highly responsive interactive visualizers that demonstrate the real-time reasoning of our neuro-symbolic backend:
+
+### A. Dynamic "What-If" LBO & M&A Sensitivity Sliders
+* **How it works:** Directly in the comps grid or deal evaluation pane, analysts can adjust core transaction assumptions via sliders:
+  * *Purchase Multiple (EV/EBITDA)*
+  * *Leverage Percentage (LBO Debt %)*
+  * *Interest Rate (Cost of Debt)*
+  * *Synergy Realization Rate %*
+* **Real-time Recalculation:** Adjusting these sliders triggers a client-side recalculation of the LBO debt amortization schedule and expected sponsor IRR. It sends socket requests to Swan's prescriptive solver to re-solve the HiGHS optimization target portfolio under the modified capital budgets in real-time.
+
+### B. Supply Chain Distress Contagion Particle Heatmap
+* **How it works:** Visualizes the supplies path network as a particle flow field using HTML5 Canvas or Cytoscape overlays:
+  * Users can select a supplier node and adjust its *Merton Default Probability* via a slider.
+  * Raising the default probability triggers a real-time cascade animation where red pulse waves flow down the supply graph edges, indicating distress propagation.
+  * Downstream customer nodes change color and raise alerts as their *Attributed Supplier Default Exposure (ASDE)* limits are breached.
+
+### C. Black-Litterman Portfolio Frontier Curve visualizer (Bloomberg PORT style)
+* **How it works:** Renders the Markowitz Efficient Frontier curve for the global macro carry trade optimizer:
+  * Displays a curved plot with expected carry yield on the Y-axis and portfolio covariance risk on the X-axis.
+  * Toggle checkboxes allow analysts to add/remove sovereign yield curves (US, EU, JP, UK, etc.).
+  * Drag-and-drop handles let analysts visually position custom currency views, instantly recalculating the Black-Litterman allocations and shifting the frontier curve dynamically.
+
+### D. Hands-Free Speech-to-Query Dictation Interface
+* **How it works:** Integrates a glassmorphic microphone button in the central input console utilizing the native browser Web Speech API:
+  * Analysts can dictate complex questions (e.g., *"Find undervalued semiconductor fabs and show me the warm introductions to their board members"*).
+  * Synthesizes audio commands into formatted prompt text for the Nexus Router, showing active voice-waveform animations.
 
 ---
 
