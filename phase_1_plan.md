@@ -11,7 +11,7 @@ Based on database structure, cardinality checks, and comprehensive **Use Case Pl
 * **Phase 1 (Active): Complete Swan Ontology mapping all 50 datasets (`ontology.py`)**
 * **Phase 2:** Advanced Reasoning Modules (`path_reasoner.py`, `gnn_model.py`, `optimizer.py`)
 * **Phase 3: Swan Rules & Financial Calculations (`rules.py`)**
-  * *Purpose:* Write declarative Datalog rules to automate **195 financial, leverage sensitivity, capital allocation, cash flow conversion, and market valuation multiples** bridging the gap between raw data and frontier intelligence.
+  * *Purpose:* Write declarative Datalog rules to automate **210 financial, leverage sensitivity, capital allocation, cash flow conversion, and market valuation multiples** bridging the gap between raw data and frontier intelligence.
 * **Phase 4:** Felix Agent Coordinator & Sandboxed Execution (`agent_pipeline.py`)
 * **Phase 5:** Web Server & Glassmorphic Dashboard UI (`web_server.py` & `web_app/`)
 
@@ -164,9 +164,7 @@ We define **51 core concepts** and map relationships across our 229 DuckDB table
 
 #### E. Sentiment & External Factors
 46. **`NewsHeadline`** (Identifier: `id`: String)
-    * Properties: `title`
     * Source Tables: `financial_news_raw_partner_headlines`, `financial_news_analyst_ratings_processed`, `financial_news_raw_analyst_ratings`
-    * Properties: `title`
 47. **`SentimentRecord`** (Identifier: `id`: String)
     * Properties: `sentence`, `sentiment`
     * Source Table: `financial_phrasebank_all_data`
@@ -284,7 +282,7 @@ We define the structural relationships linking every concept back to its key dim
 
 ## 🧬 Phase 3: Swan Rules & Financial Calculations
 
-We define **195 declarative Datalog derived rules** inside `rules.py` categorized across 13 business domains:
+We define **210 declarative Datalog derived rules** inside `rules.py` categorized across 14 business domains:
 
 ### 1. DuPont Analysis & Profitability Rules (15 Rules)
 * **`net_profit_margin`**: `net_income_loss / total_revenue`
@@ -491,21 +489,38 @@ We define **195 declarative Datalog derived rules** inside `rules.py` categorize
 * **`fcf_dividend_coverage_ratio`**: `free_cash_flow / dividends_paid`
 
 ### 13. Capital Allocation Integrity, Operating Leverage & Cash Flow Conversion (15 Rules)
-* **`plowback_ratio`**: `1 - dividend_payout_ratio` (Percent of profits retained to grow operations)
-* **`share_buyback_dilution_offset`**: `share_repurchase_amount / executive_stock_dilution` (Evaluates if repurchases reduce float or merely cover executive stock options dilution)
+* **`plowback_ratio`**: `1 - dividend_payout_ratio`
+* **`share_buyback_dilution_offset`**: `share_repurchase_amount / executive_stock_dilution`
 * **`capital_return_to_ebitda`**: `(share_repurchase_amount + dividends_paid) / ebitda`
-* **`degree_of_operating_leverage_dol`**: `% change in operating_income / % change in total_revenue` (Sensitivity coefficient of operating profit to top-line volume shifts)
-* **`degree_of_financial_leverage_dfl`**: `% change in earnings_per_share / % change in operating_income` (Efficacy of debt formatting bottom-line returns)
+* **`degree_of_operating_leverage_dol`**: `% change in operating_income / % change in total_revenue`
+* **`degree_of_financial_leverage_dfl`**: `% change in earnings_per_share / % change in operating_income`
 * **`degree_of_total_leverage_dtl`**: `degree_of_operating_leverage_dol * degree_of_financial_leverage_dfl`
-* **`tax_shield_usd`**: `interest_expense * effective_tax_rate` (Tax savings generated via debt interest deductibility)
+* **`tax_shield_usd`**: `interest_expense * effective_tax_rate`
 * **`adjusted_ebitda`**: `operating_income_loss + depreciation_amortization`
-* **`free_cash_flow_to_firm_fcff`**: `operating_income_loss * (1 - effective_tax_rate) + depreciation_amortization - capital_expenditures - change_in_working_capital` (Unlevered cash flow available to all capital providers)
-* **`free_cash_flow_to_equity_fcfe`**: `free_cash_flow_to_firm_fcff + net_borrowings - interest_expense * (1 - effective_tax_rate)` (Levered cash flow available to common equity holders)
-* **`fcf_conversion_ratio`**: `free_cash_flow / ebitda` (Measures cash conversion efficiency of operating profits)
-* **`risk_premium_over_risk_free`**: `earnings_yield - US10Y_bond_yield` (Equity risk premium spread evaluation)
-* **`tobin_q_proxy`**: `(market_capitalization + total_liabilities) / total_assets` (Compares asset replacement cost with security valuation)
+* **`free_cash_flow_to_firm_fcff`**: `operating_income_loss * (1 - effective_tax_rate) + depreciation_amortization - capital_expenditures - change_in_working_capital`
+* **`free_cash_flow_to_equity_fcfe`**: `free_cash_flow_to_firm_fcff + net_borrowings - interest_expense * (1 - effective_tax_rate)`
+* **`fcf_conversion_ratio`**: `free_cash_flow / ebitda`
+* **`risk_premium_over_risk_free`**: `earnings_yield - US10Y_bond_yield`
+* **`tobin_q_proxy`**: `(market_capitalization + total_liabilities) / total_assets`
 * **`reinvestment_rate_post_tax`**: `(capital_expenditures - depreciation_amortization + rnd_expenses) / (operating_income_loss * (1 - effective_tax_rate))`
 * **`return_on_incremental_invested_capital_roiic`**: `change_in_operating_income_post_tax / prior_year_reinvestment`
+
+### 14. Growth Quality Trends, Payout Yields & Economic Differentials (15 Rules)
+* **`interest_expense_to_debt_ratio`**: `interest_expense / total_debt`
+* **`fixed_charge_coverage_ratio_post_tax`**: `(operating_income_loss * (1 - effective_tax_rate) + lease_payments) / (interest_expense + lease_payments)`
+* **`gross_profit_growth_yoy`**: `(gross_profit_t - gross_profit_t_minus_1) / gross_profit_t_minus_1`
+* **`operating_cash_flow_growth_yoy`**: `(net_cash_operating_t - net_cash_operating_t_minus_1) / net_cash_operating_t_minus_1`
+* **`reinvestment_growth_yoy`**: `(reinvestment_rate_t - reinvestment_rate_t_minus_1) / reinvestment_rate_t_minus_1`
+* **`is_growth_decelerating`**: Unary alert flagging slower revenue growth compared to prior year.
+* **`equity_risk_premium`**: `cost_of_equity_capm - risk_free_rate`
+* **`spread_earnings_yield_to_bond_yield`**: `earnings_yield - cost_of_debt`
+* **`days_working_capital_outstanding`**: `(working_capital * 365) / total_revenue`
+* **`cash_conversion_cycle_expansion`**: `cash_conversion_cycle_ccc_t - cash_conversion_cycle_ccc_t_minus_1`
+* **`shareholder_payout_yield`**: `(dividends_paid + share_repurchase_amount) / market_capitalization`
+* **`reinvestment_efficiency_index`**: `change_in_operating_income_post_tax / capital_expenditures_t_minus_1`
+* **`inflation_differential`**: `local_inflation_rate - macro_indicator_inflation_rate`
+* **`sovereign_spread_premium`**: `sovereign_yield - risk_free_rate`
+* **`real_sovereign_yield`**: `sovereign_yield - local_inflation_rate`
 
 ---
 
