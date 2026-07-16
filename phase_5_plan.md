@@ -62,12 +62,12 @@ To surpass specialized tools, the web terminal renders tailored components based
 * **Interactivity:** Deleted paragraphs are highlighted in hot-pink redlines, and newly inserted risk factors are highlighted in neon-green. A divergence indicator flags if the company added litigation risks that were unmentioned in prior files.
 
 ### C. PitchBook-Style Interactive Board Pathfinder
-* **How it beats competitors:** Computes and visualizes warm executive pathways using `Cytoscape.js`.
-* **Interactivity:** Rendered nodes represent corporate executives and company boards:
+* **How it beats competitors:** Computes and visualizes warm executive pathways using `Cytoscape.js` optimized with a **Level-of-Detail (LOD) Node Grouping** algorithm to prevent browser lag.
+* **Interactivity & Optimization:** Rendered nodes represent corporate executives and company boards.
+  * *LOD Grouping:* To maintain a smooth 60fps rendering, if the supply network exceeds 100 nodes, sub-suppliers are grouped dynamically into collapsible industry clusters (e.g., "50 Software Suppliers"). Users click the cluster node to expand it.
   * Acquirer executive ($A$) is highlighted in teal.
   * Target founder ($F$) is highlighted in purple.
   * Intermediate connectors are colored by connection strength ($\text{PathStrength}_p$).
-  * Users can hover over intermediate nodes to view board seats and degree values.
 
 ### D. Koyfin-Style Multi-Axis Multiples Charting
 * **How it beats competitors:** Interactive mean-reversion analysis overlays ($Z < -2.0$) computed by the Koyfin Multiple Solver.
@@ -92,7 +92,7 @@ A light, fast Web Server exposes the terminal api directly inside our python fra
    * Receives: `{"message": "user query prompt", "session_id": "GUID"}`.
    * Execution flow:
      1. Passes the query to the **Nexus Router** to identify the route.
-     2. Validates safety constraints inside the **AST Sandbox** if code generation is triggered.
+     2. Validates safety constraints inside the **AST Sandbox if code generation is triggered.
      3. Queries `rogue_finance.duckdb` via Swan.
      4. Resolves citations and formats JSON return packets.
    * Returns:
@@ -139,7 +139,7 @@ To fully capture institutional buy-side interest, we implement six highly respon
   * *Leverage Percentage (LBO Debt %)*
   * *Interest Rate (Cost of Debt)*
   * *Synergy Realization Rate %*
-* **Real-time Recalculation:** Adjusting these sliders triggers a client-side recalculation of the LBO debt amortization schedule and expected sponsor IRR. It sends socket requests to Swan's prescriptive solver to re-solve the HiGHS optimization target portfolio under the modified capital budgets in real-time.
+* **WebAssembly Client-Side Recalculation:** Adjusting these sliders triggers a client-side recalculation of the LBO debt amortization schedule and expected sponsor IRR compiled into a local WebAssembly module. This bypasses network latency, giving instantaneous (0ms lag) feedback. Large optimization changes still send socket requests to Swan's prescriptive solver.
 
 ### B. Supply Chain Distress Contagion Particle Heatmap
 * **How it works:** Visualizes the supplies path network as a particle flow field using HTML5 Canvas or Cytoscape overlays:
