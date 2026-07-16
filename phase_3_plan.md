@@ -281,7 +281,31 @@ This probability is written back to the `BankruptcyRisk` concept to feed the Gra
 
 ---
 
-## 🌎 5. Macro Carry Trade & Hedging Solver (`macro_optimizer.py`)
+## 🧠 5. GNN Explainability: Activist Synergy Attribution & Supply Chain Risk Exposure (`gnn_explainers.py`)
+
+This module processes Swan's GNN explainability outputs to generate actionable activist investment recommendations and risk evaluations.
+
+### A. Activist Synergy Attribution (Use Case 10 & 13)
+For activist sourcing, we analyze `ExplainNode` attributions to isolate target companies whose valuation multiples are penalized by bloated corporate overhead (cost structures, CEO compensation).
+* If a target company exhibits a valuation discount compared to its graph neighbors, the explainer isolates whether the feature attribution weight for `CEO_Salary_Ratio` ($w_{ceo}$) represents the primary driver of this discount:
+
+$$\text{Overhead Penalty Percentage} = \frac{\max\left(0, -w_{ceo}\right)}{\sum_{f} |w_f|} \times 100$$
+
+* Sourced targets with an overhead penalty exceeding 25% are automatically flagged in the **Felix Pitchbook Generator** as candidates where activist intervention can unlock substantial multiple expansion.
+
+### B. Attributed Supplier Default Exposure (ASDE) (Use Case 4 & 12)
+To secure the supply chain of target companies, we cross-reference `ExplainEdge` importance attributions with the **Merton Probability of Default** ($PD$) of the respective suppliers.
+* If the GNN output shows a company's valuation is heavily driven by specific supplier dependencies, we compute the **ASDE** index:
+
+$$\text{ASDE}_i = \text{ExplainEdge.weight}_i \times \text{Supplier}_i.\text{ProbabilityOfDefault}$$
+
+* Any target candidate where the cumulative supplier default exposure exceeds a threshold is flagged as a high-risk deal targets during Virtual Data Room (VDR) diligence:
+
+$$\sum_{i \in \text{Suppliers}} \text{ASDE}_i > \tau$$
+
+---
+
+## 🌎 6. Macro Carry Trade & Hedging Solver (`macro_optimizer.py`)
 
 For global macro treasury analysis (Use Case 15), we build an optimal currency carry optimizer inside Swan's prescriptive solver to find the optimal allocation weights ($w_j$) across international sovereign yield curves:
 
@@ -310,7 +334,7 @@ w_alloc = carry_prob.solve_for(Country.w_alloc, type="cont", lower=-1.0, upper=1
 
 ---
 
-## 📈 6. Live Formula Excel Modeler (`live_modeler.py`)
+## 📈 7. Live Formula Excel Modeler (`live_modeler.py`)
 
 Generates living Excel spreadsheet outputs (Use Cases 11 & 13) using `openpyxl`.
 * **Zero Hardcoding Rule:** Projection cells must refer to formula equations in uppercase string parameters (e.g. `=B2*0.60`) rather than injecting static float results.
@@ -327,7 +351,7 @@ Generates living Excel spreadsheet outputs (Use Cases 11 & 13) using `openpyxl`.
 
 ---
 
-## 🔗 7. Source Citation Engine (`citation_engine.py`)
+## 🔗 8. Source Citation Engine (`citation_engine.py`)
 
 Binds cell data in web grids and pitchbooks to row indexes inside DuckDB:
 
