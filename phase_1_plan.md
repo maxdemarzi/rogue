@@ -11,7 +11,7 @@ Based on database structure, cardinality checks, and comprehensive **Use Case Pl
 * **Phase 1 (Active): Complete Swan Ontology mapping all 50 datasets (`ontology.py`)**
 * **Phase 2:** Advanced Reasoning Modules (`path_reasoner.py`, `gnn_model.py`, `optimizer.py`)
 * **Phase 3: Swan Rules & Financial Calculations (`rules.py`)**
-  * *Purpose:* Write declarative Datalog rules to automate **165 financial, growth momentum, FCCR leverage, DuPont ROIC, PEG multiples, and vertical-specific productivity ratios** bridging the gap between raw data and frontier intelligence.
+  * *Purpose:* Write declarative Datalog rules to automate **180 financial, growth momentum, CAPM Cost of Equity, WACC, dividend coverage, and working capital efficiency ratios** bridging the gap between raw data and frontier intelligence.
 * **Phase 4:** Felix Agent Coordinator & Sandboxed Execution (`agent_pipeline.py`)
 * **Phase 5:** Web Server & Glassmorphic Dashboard UI (`web_server.py` & `web_app/`)
 
@@ -283,7 +283,7 @@ We define the structural relationships linking every concept back to its key dim
 
 ## 🧬 Phase 3: Swan Rules & Financial Calculations
 
-We define **165 declarative Datalog derived rules** inside `rules.py` categorized across 11 business domains:
+We define **180 declarative Datalog derived rules** inside `rules.py` categorized across 12 business domains:
 
 ### 1. DuPont Analysis & Profitability Rules (15 Rules)
 * **`net_profit_margin`**: `net_income_loss / total_revenue`
@@ -456,21 +456,38 @@ We define **165 declarative Datalog derived rules** inside `rules.py` categorize
 * **`price_to_fcf`**: `StockPrice / free_cash_flow_per_share`
 
 ### 11. Advanced Leverage Coverage & Value Metrics (15 Rules)
-* **`fixed_charge_coverage_ratio_fccr`**: `(operating_income_loss + lease_payments) / (interest_expense + lease_payments)` (Critical asset-heavy leasing solvency measure)
+* **`fixed_charge_coverage_ratio_fccr`**: `(operating_income_loss + lease_payments) / (interest_expense + lease_payments)`
 * **`times_interest_earned`**: `operating_income_loss / interest_expense`
 * **`ebitda_growth_yoy`**: `(ebitda_t - ebitda_t_minus_1) / ebitda_t_minus_1`
 * **`capex_growth_yoy`**: `(capex_t - capex_t_minus_1) / capex_t_minus_1`
 * **`free_cash_flow_growth_yoy`**: `(fcf_t - fcf_t_minus_1) / fcf_t_minus_1`
 * **`operating_profit_margin_post_tax`**: `operating_income_loss * (1 - effective_tax_rate) / total_revenue`
 * **`invested_capital_turnover`**: `total_revenue / (stockholders_equity + total_debt - cash_and_equivalents)`
-* **`dupont_roic`**: `operating_profit_margin_post_tax * invested_capital_turnover` (Decomposes corporate capital allocation efficacy)
+* **`dupont_roic`**: `operating_profit_margin_post_tax * invested_capital_turnover`
 * **`fcf_yield`**: `free_cash_flow_per_share / StockPrice`
 * **`earnings_yield`**: `1 / pe_multiple`
-* **`peg_ratio`**: `pe_multiple / net_income_growth_yoy` (P/E adjusted for annual bottom-line growth velocity)
-* **`sustainable_growth_rate`**: `roe * (1 - dividend_payout_ratio)` (Maximum corporate growth limit without external leverage injection)
+* **`peg_ratio`**: `pe_multiple / net_income_growth_yoy`
+* **`sustainable_growth_rate`**: `roe * (1 - dividend_payout_ratio)`
 * **`aviation_operating_cost_per_passenger`**: `operating_expenses / passenger_count`
 * **`semiconductor_rnd_to_capex`**: `rnd_spending / capital_expenditures`
 * **`biotech_pipeline_density`**: `clinical_trial_count / total_employees`
+
+### 12. Cost of Capital (WACC), Margin Expansion & Dividend Security (15 Rules)
+* **`cost_of_equity_capm`**: `risk_free_rate + beta * market_risk_premium` (CAPM model cost of equity capital)
+* **`cost_of_debt`**: `interest_expense / total_debt` (Effective gross interest rate paid on debt obligations)
+* **`wacc`**: `(equity_weight * cost_of_equity_capm) + (debt_weight * cost_of_debt * (1 - effective_tax_rate))` (Weighted Average Cost of Capital)
+* **`ev_to_fcf`**: `enterprise_value / free_cash_flow`
+* **`ev_to_invested_capital`**: `enterprise_value / (stockholders_equity + total_debt - cash_and_equivalents)`
+* **`merton_default_distance_proxy`**: `(total_assets - total_liabilities) / volatility` (Structural default risk proximity model)
+* **`equity_value_headroom`**: `market_capitalization / total_liabilities`
+* **`accounts_receivable_pct_revenue`**: `accounts_receivable / total_revenue` (Accounts receivable credit intensity)
+* **`inventory_pct_cogs`**: `inventory / cogs`
+* **`accounts_payable_pct_cogs`**: `accounts_payable / cogs`
+* **`working_capital_intensity`**: `working_capital / total_revenue`
+* **`ebitda_margin_expansion`**: `ebitda_margin_t - ebitda_margin_t_minus_1`
+* **`gross_margin_expansion`**: `gross_margin_t - gross_margin_t_minus_1`
+* **`dividend_coverage_ratio`**: `net_income_loss / dividends_paid` (Net income dividend coverage safety factor)
+* **`fcf_dividend_coverage_ratio`**: `free_cash_flow / dividends_paid` (FCF dividend coverage safety factor)
 
 ---
 
