@@ -22,7 +22,7 @@ graph TD
     
     subgraph Solver Modules
         Executor -->|pyrel_duckdb| Swan[Swan Semantic & Rules Engine]
-        Executor -->|scipy/openpyxl| Solvers[Merton / Excel Modeler]
+        Executor -->|openpyxl| Solvers[Merton / Excel Modeler]
     end
     
     Executor -->|JSON Output & Diffs| Visualizer[Dashboard UI Render]
@@ -36,7 +36,7 @@ To prevent arbitrary execution risks (XSS, remote code execution, database corru
 
 ### A. Deny-List and Allow-List Checks
 The validator audits the code's parsed nodes against a whitelist:
-* **Approved Modules:** `pyrel_duckdb`, `pandas`, `numpy`, `openpyxl`, `json`, `math`, `datetime`, `scipy.optimize.milp`, `scipy.optimize.Bounds`.
+* **Approved Modules:** `pyrel_duckdb`, `pandas`, `numpy`, `openpyxl`, `json`, `math`, `datetime`.
 * **Prohibited Imports:** `os`, `sys`, `shutil`, `subprocess`, `requests`, `urllib`, `socket`, `builtins.eval`, `builtins.exec`, `sqlite3`, `duckdb` (raw connections bypassed; only Swan `Model` references allowed).
 
 ### B. Validation Code Skeleton
@@ -45,7 +45,7 @@ import ast
 
 class SecureASTValidator(ast.NodeVisitor):
     def __init__(self):
-        self.allowed_imports = {'pandas', 'numpy', 'openpyxl', 'pyrel_duckdb', 'json', 'math', 'datetime', 'scipy'}
+        self.allowed_imports = {'pandas', 'numpy', 'openpyxl', 'pyrel_duckdb', 'json', 'math', 'datetime'}
         
     def visit_Import(self, node):
         for alias in node.names:

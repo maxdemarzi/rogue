@@ -291,7 +291,7 @@ For activist sourcing, we analyze `ExplainNode` attributions to isolate target c
 
 $$\text{Overhead Penalty Percentage} = \frac{\max\left(0, -w_{ceo}\right)}{\sum_{f} |w_f|} \times 100$$
 
-* Sourced targets with an overhead penalty exceeding 25% are automatically flagged in the **Felix Pitchbook Generator** as candidates where activist intervention can unlock substantial multiple expansion.
+* Sourced targets with an overhead penalty exceeding 25% are automatically flagged in the **Nexus Pitchbook Generator** as candidates where activist intervention can unlock substantial multiple expansion.
 
 ### B. Attributed Supplier Default Exposure (ASDE) (Use Case 4 & 12)
 To secure the supply chain of target companies, we cross-reference `ExplainEdge` importance attributions with the **Merton Probability of Default** ($PD$) of the respective suppliers.

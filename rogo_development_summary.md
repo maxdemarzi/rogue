@@ -43,7 +43,7 @@ The Rogo AI Analyst replicates the capabilities of a modern financial analyst te
     *   *Namespace Suffixing*: Suffixes company node IDs with `" (Company)"` to prevent namespace collisions when companies and legal entities share identical names.
 
 ### Phase 4: Target Optimization & Orchestration Pipeline
-*   **Prescriptive MILP Solver**: [optimizer.py](file:///home/maxdemarzi/swan-rogo/python/pyrel_duckdb/nlq/app/optimizer.py) uses `scipy.optimize.milp` to select optimal acquisition targets.
+*   **Prescriptive MILP Solver**: [optimizer.py](file:///home/maxdemarzi/swan-rogo/python/pyrel_duckdb/nlq/app/optimizer.py) uses Swan's native prescriptive solver wrapper (`pyrel_duckdb.reasoners.prescriptive.Problem`) to select optimal acquisition targets.
     *   *Objective*: Maximize aggregate net income.
     *   *Constraints*: Select exactly $K$ targets, limit total GNN-predicted multiple cost below a budget limit, and enforce sector diversity (at most $M$ targets per industry).
 *   **Nexus Agent Pipeline**: [agent_pipeline.py](file:///home/maxdemarzi/swan-rogo/python/pyrel_duckdb/nlq/app/agent_pipeline.py) connects the router, state manager, sandbox compiler, pathfinder, GNN, and MILP optimizer into a single unified `NexusAgent` class.
