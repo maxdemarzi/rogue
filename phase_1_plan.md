@@ -291,3 +291,9 @@ The test runner `verify_ontology.py` will assert:
 1. Clean compilation of all 54 concepts.
 2. Ingestion count checks of all 229 tables.
 3. Ingestion speeds remain **under 5 seconds** (raw daily pricing timelines excluded).
+
+### B. Dynamic Catalog & Schema Drift Validator (`validate_schema.py`)
+To prevent silent runtime ingestion failures when DuckDB tables undergo changes:
+1. A dynamic schema validator queries the DuckDB catalog schema (`information_schema.columns` and `information_schema.tables`).
+2. It loops through all Concept and Property declarations in `ontology.py` and verifies they exist physically in the catalog.
+3. Any column type mismatch or missing attribute triggers a build-blocking exception, alerting developers to schema drift.
