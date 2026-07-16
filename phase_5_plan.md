@@ -170,6 +170,16 @@ To fully capture institutional buy-side interest, we implement six highly respon
   * Activists can drag-and-drop target directors to "remove" list and nominate candidates from their board member network.
   * Plats a real-time bar chart showing the projected proxy vote distribution (Sponsor/Activist/Retail) by correlating institutional share block distributions inside DuckDB.
 
+### G. FactSet-Style Geo-Spatial Supply Chain Sieve Map
+* **How it works:** Displays an interactive global map (utilizing D3.js or Leaflet vector layers) geocoding supplier and facility nodes:
+  * Analysts can drag-and-drop regional distress overlays (e.g. Suez Canal blockages, localized weather disruptions).
+  * Automatically filters the supplies graph, highlighting exposed downstream customer routes and recalculating global sourcing risk indices.
+
+### H. Capital IQ-Style Transaction Cost & Slippage Rebalancing Curve
+* **How it works:** Visualizes execution costs vs. target trade volumes:
+  * Renders a cost curve plotting execution slippage against trading volume sizes.
+  * Analysts can slide-adjust trading timelines (e.g. rebalancing over 5 days vs 1 day) to watch the Almgren-Chriss slippage curve adjust, finding the optimal cost-vs-delay execution boundary.
+
 ---
 
 ## 🧪 Phase 5 Verification Plan

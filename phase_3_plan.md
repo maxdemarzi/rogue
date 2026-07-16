@@ -541,6 +541,18 @@ $$E[R] = \left[ (\tau \Sigma)^{-1} + P^T \Omega^{-1} P \right]^{-1} \left[ (\tau
 
 Where $\Sigma$ is the sovereign yield covariance matrix in DuckDB, and $Q$ represents the analyst's custom FX yield views.
 
+### L. FactSet Geographic Supply Chain Risk Sieve
+Matches FactSet multi-hop geographic supply network maps. Combines B2B supplies links with regional locations (`companies.json` geocodes) to compute a firm's exposure index to localized environmental or trade route disruptions (e.g. Suez Canal, Shanghai port congestion):
+
+$$\text{GeoExposure}_C = \sum_{s \in \text{Suppliers}(C)} \text{RevenueShare}_{s, C} \times \mathbb{I}(s \in \text{DisruptionZone}_Z)$$
+
+### M. Capital IQ Equities Portfolio Transaction Cost & Slippage Minimizer
+Matches Capital IQ execution optimizers. Formulates a prescriptive rebalancing model in Swan to minimize Almgren-Chriss transaction cost slippage penalties during portfolio adjustments:
+
+$$\min_w \sum_{i} w_i \times \text{ExpectedReturn}_i - \sum_{i} \gamma \cdot \sigma_i \cdot \left| w_i - w_{i, \text{current}} \right|^{1.5}$$
+
+Subject to portfolio sector weights and capital budget bounds.
+
 ---
 
 ## 🌎 10. Macro Carry Trade & Hedging Solver (`macro_optimizer.py`)
