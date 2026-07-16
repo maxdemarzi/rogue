@@ -305,7 +305,61 @@ $$\sum_{i \in \text{Suppliers}} \text{ASDE}_i > \tau$$
 
 ---
 
-## 🌎 6. Macro Carry Trade & Hedging Solver (`macro_optimizer.py`)
+## 💼 6. Corporate Transaction & Merger Accretion/Dilution Solver (`merger_solver.py`)
+
+This module models strategic M&A deals (Use Case 8 & 13) to determine pricing limits and equity issues that preserve value for acquirer shareholders.
+
+### A. Pricing accretion/dilution Formulation
+To model corporate deal boundaries, the module computes post-transaction combined earnings per share ($EPS_{combined}$) adjusting for synergies, new debt issuance financing costs, and share dilution:
+
+$$EPS_{combined} = \frac{\text{Earnings}_{acq} + \text{Earnings}_{tgt} + \text{Synergies}_{\text{post\_tax}} - \text{InterestExpense}_{\text{new}} \times (1 - \text{TaxRate}) - \text{Amortization}_{\text{PPA}}}{\text{Shares}_{acq} + \text{Shares}_{\text{new}}}$$
+
+Where:
+* $\text{Shares}_{\text{new}} = \frac{\text{PurchasePrice} \times \text{EquityPercentage}}{\text{StockPrice}_{acq}}$
+* $\text{InterestExpense}_{\text{new}} = (\text{PurchasePrice} \times \text{DebtPercentage}) \times \text{CostOfDebt}$
+
+### B. Prescriptive Accretion Boundary Optimization
+Using Swan's prescriptive solver, we set up an optimization to determine the maximum purchase price ($P_{max}$) that maintains accretion ($EPS_{combined} \ge EPS_{acq}$):
+
+```python
+merger_prob = Problem(model, Float)
+
+# Solve for continuous Max Purchase Price
+P_max = merger_prob.solve_for(MADeal.max_price, type="cont", lower=0.0)
+
+# Constraint: post-transaction EPS must exceed acquirer stand-alone EPS
+merger_prob.satisfy(combined_eps >= standalone_eps)
+
+merger_prob.solve()
+```
+
+---
+
+## 🕵️ 7. Insider Trading Pre-Event Information Path Tracer (`path_tracer.py`)
+
+This module implements compliance and activist tracing of executive insider trades (Use Case 14) to calculate potential information leakage pathways shortly before material market disclosures.
+
+### A. Graph Path Interlocks
+We trace interlocking director paths from corporate executives who execute quiet-window transactions to peers where pending credit rating actions or earnings surprises are scheduled:
+
+```python
+# Trace paths of length <= 3 linking the insider to peer disclosure nodes
+path_query = board_graph.reachable(InsiderPerson, TargetFilingDate, use_cache=False)
+```
+
+### B. Bayesian Leakage Probability Model
+For any set of interlocking board paths linking an insider trader $T$ to a disclosure event, we calculate the cumulative leakage probability index ($P_{leakage}$):
+
+$$P_{leakage} = 1 - \prod_{p \in \text{Paths}(T \to \text{Event})} \left( 1 - \text{ConvictionScore}_T \times \lambda^{\text{Length}(p) - 1} \right)$$
+
+Where:
+* $\text{ConvictionScore}_T$ is the insider's historical trading conviction score from `insider_trading`.
+* $\lambda = 0.5$ is the information transmission decay factor per graph hop.
+* If $P_{leakage} > 0.70$, an automated governance alert is generated in the dashboard.
+
+---
+
+## 🌎 8. Macro Carry Trade & Hedging Solver (`macro_optimizer.py`)
 
 For global macro treasury analysis (Use Case 15), we build an optimal currency carry optimizer inside Swan's prescriptive solver to find the optimal allocation weights ($w_j$) across international sovereign yield curves:
 
@@ -334,7 +388,7 @@ w_alloc = carry_prob.solve_for(Country.w_alloc, type="cont", lower=-1.0, upper=1
 
 ---
 
-## 📈 7. Live Formula Excel Modeler (`live_modeler.py`)
+## 📈 9. Live Formula Excel Modeler (`live_modeler.py`)
 
 Generates living Excel spreadsheet outputs (Use Cases 11 & 13) using `openpyxl`.
 * **Zero Hardcoding Rule:** Projection cells must refer to formula equations in uppercase string parameters (e.g. `=B2*0.60`) rather than injecting static float results.
@@ -351,7 +405,7 @@ Generates living Excel spreadsheet outputs (Use Cases 11 & 13) using `openpyxl`.
 
 ---
 
-## 🔗 8. Source Citation Engine (`citation_engine.py`)
+## 🔗 10. Source Citation Engine (`citation_engine.py`)
 
 Binds cell data in web grids and pitchbooks to row indexes inside DuckDB:
 
