@@ -509,7 +509,7 @@ $$\text{ForwardRate}_{\text{theoretical}} = \text{SpotRate} \times \left( \frac{
 
 Calculates the basis spread mismatch:
 
-$$\Delta_{basis} = \frac{\text{ForwardRate}_{\text{actual}}}{\text{SpotRate}} \times \left( 1 + \text{InterestRate}_{\text{Fed}} \cdot \frac{T}{360} \right) - \left( 1 + \text{InterestRate}_{\text{Local}} \cdot \frac{T}{360} \right)$$
+$$\text{BasisSpread} = \frac{\text{ForwardRate}_{\text{actual}}}{\text{SpotRate}} \times \left( 1 + \text{InterestRate}_{\text{Fed}} \cdot \frac{T}{360} \right) - \left( 1 + \text{InterestRate}_{\text{Local}} \cdot \frac{T}{360} \right)$$
 
 Auto-flags riskless cross-currency arbitrage trades if basis spreads exceed 10 bps.
 
@@ -526,6 +526,20 @@ Matches Bloomberg credit default swap risk dashboards (`CDSD`). Calculates conti
 $$PD_{\text{cds}} = 1 - e^{-\frac{\text{CDS\_Spread} \cdot T}{1 - \text{RecoveryRate}}}$$
 
 This allows credit analysts to cross-reference market pricing of credit risk against fundamentals inside DuckDB.
+
+### J. PitchBook Co-Investment Syndicate Pathfinder
+Identifies venture syndication behaviors. Traces overlapping startup investment rounds to calculate the Jaccard similarity index ($J$) of co-investments between two VC funds:
+
+$$J(A, B) = \frac{|\text{Portfolio}_A \cap \text{Portfolio}_B|}{|\text{Portfolio}_A \cup \text{Portfolio}_B|}$$
+
+If $J(A, B) \ge 0.40$, they are classified as frequent syndicate partners, aiding PE sourcing.
+
+### K. Bloomberg Black-Litterman Sovereign Portfolio Allocation Optimizer
+Matches Bloomberg portfolio manager optimizers (`PORT`). Combines historical return expectations with analyst sovereign yield views inside Swan's prescriptive solver to find optimal allocation weights ($w$):
+
+$$E[R] = \left[ (\tau \Sigma)^{-1} + P^T \Omega^{-1} P \right]^{-1} \left[ (\tau \Sigma)^{-1} \Pi + P^T \Omega^{-1} Q \right]$$
+
+Where $\Sigma$ is the sovereign yield covariance matrix in DuckDB, and $Q$ represents the analyst's custom FX yield views.
 
 ---
 
