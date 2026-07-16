@@ -456,19 +456,44 @@ $$0.0 \le h_c \le 0.85 \quad \text{(Maximum hedging cover constraint)}$$
 
 ## 🏁 9. Competitor Alignment: Hebbia Credit Matrices & AlphaSense Document Diffing
 
-To match the core generative products of specialized tools (like Hebbia’s document-to-matrix query and AlphaSense’s MD&A redline diffs), we define the two final reasoning engines:
+To match the core generative products of specialized tools (like Hebbia’s document-to-matrix query and AlphaSense’s MD&A redline diffs), we define the final reasoning engines:
 
 ### A. Hebbia Change-of-Control & Covenant Creditor Matrix Extractor
-For credit diligence (Use Case 8), we compile key covenant parameters across multiple target credit agreements (`data/corporate_bonds/`) to construct Hebbia-style comparable grids:
-* Extracted concepts: `Debt_Maturity_Walls`, `Change_of_Control_Thresholds`, `Interest_Rate_Floors`.
-* Evaluates dynamic constraints to verify if the combined deal leverage triggers covenant breach flags:
-
-$$\text{Covenant Breach} = \mathbb{I}\left( \text{CombinedLeverage} \ge \text{ChangeOfControlCovenantThreshold} \right)$$
+For credit diligence (Use Case 8), we compile key covenant parameters across credit agreements to construct Hebbia-style comparable grids.
+* Evaluates dynamic constraints to verify if combined deal leverage triggers covenant breach flags.
 
 ### B. AlphaSense MD&A Risk Redliner
 Automates semantic comparative auditing of annual reports (Use Case 7).
-* Compares risk disclosure sections across subsequent fiscal filings (`SECStatement_t` vs `SECStatement_t-1`) inside DuckDB.
-* Extracts sentence-level sentiment shifts and highlights new legal or operational disputes, scoring the severity delta of new risk items.
+* Compares risk disclosure sections across subsequent fiscal filings (`SECStatement` dates) inside DuckDB, extracting sentiment delta scores.
+
+### C. PitchBook Warm Introduction Connection Pathfinder
+Matches PitchBook's board network visualizers. We run reachability checks on the interlocking `BoardMember` graph to locate the shortest connectivity path between an acquirer executive ($A$) and a target founder ($F$):
+
+```python
+path_query = board_graph.reachable(A, F, use_cache=True)
+```
+
+Paths are ranked using an inverse degree attenuation metric to find the warmest introduction pathway:
+
+$$\text{PathStrength}_p = \sum_{v \in p \setminus \{A, F\}} \frac{1}{\text{board\_graph.degree}(v)}$$
+
+### D. S&P Capital IQ LP Commitment Allocation Optimizer
+Matches Capital IQ fund allocation optimizers. Formulates a prescriptive optimization problem in Swan to allocate capital commitments ($w_f$) across private equity fund managers:
+
+$$\max_w \sum_{f} w_f \times \text{ExpectedIRR}_f$$
+
+Subject to:
+
+$$\sum_{f} w_f \times \text{DryPowderRatio}_f \le \text{MaxIlliquidityExposure}$$
+
+$$\sum_{f \in \text{Vintage}_v} w_f \le \text{MaxVintageCap}_v \quad \forall v$$
+
+### E. Tegus Expert Transcript Sentiment Divergence Tracker
+Matches Tegus research transcription analysis. Traces sentiment shifts across executive news headlines and phrasebanks, benchmarking them against Wall Street consensus beat streaks:
+
+$$\text{DivergenceIndex} = \left| \text{HeadlineSentimentScore} - \text{AnalystBeatRate} \right|$$
+
+Firms with high divergence indexes are flagged as high-conviction long/short targets.
 
 ---
 
