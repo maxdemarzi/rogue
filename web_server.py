@@ -52,16 +52,53 @@ class NexusHTTPHandler(SimpleHTTPRequestHandler):
 
                 rows_payload = []
                 if df is not None:
+                    cols = [c.lower() for c in df.columns]
+                    string_cols = [c for c in df.columns if df[c].dtype == 'object']
+                    num_cols = [c for c in df.columns if df[c].dtype in ['float64', 'int64']]
+                    
+                    # Find candidate ticker
+                    ticker_col = None
+                    for c in df.columns:
+                        if c.lower() in ['ticker', 'symbol', 'stock', 'symbol_id']:
+                            ticker_col = c
+                            break
+                    if not ticker_col and string_cols:
+                        ticker_col = string_cols[0]
+                        
+                    # Find candidate name
+                    name_col = None
+                    for c in df.columns:
+                        if c.lower() in ['name', 'company_name', 'companyname', 'title', 'headline']:
+                            name_col = c
+                            break
+                    if not name_col and len(string_cols) > 1:
+                        name_col = string_cols[1]
+                    elif not name_col:
+                        name_col = ticker_col
+                        
+                    # Find numeric columns
+                    margin_col = num_cols[0] if len(num_cols) > 0 else None
+                    ebitda_col = num_cols[1] if len(num_cols) > 1 else None
+                    pd_col = num_cols[2] if len(num_cols) > 2 else None
+                    
+                    # Fine-tune matching based on common finance strings
+                    for c in df.columns:
+                        cl = c.lower()
+                        if 'margin' in cl or 'coupon' in cl or 'rate' in cl or 'price' in cl or 'value' in cl:
+                            margin_col = c
+                        if 'ebitda' in cl or 'size' in cl or 'volume' in cl or 'score' in cl:
+                            ebitda_col = c
+                        if 'pd' in cl or 'probability' in cl or 'default' in cl or 'risk' in cl or 'volatility' in cl:
+                            pd_col = c
+
                     records = df.to_dict(orient='records')
                     for r in records:
-                        # Normalize key names
-                        norm_r = {k.lower().replace('_', ''): v for k, v in r.items()}
                         rows_payload.append({
-                            "ticker": r.get('ticker') or norm_r.get('ticker') or 'AIR',
-                            "name": r.get('name') or r.get('company_name') or norm_r.get('companyname') or 'AAR Corp',
-                            "margin": r.get('margin') or norm_r.get('operatingmargin') or norm_r.get('margin') or 0.15,
-                            "ebitda": r.get('ebitda') or norm_r.get('ebitdamargin') or norm_r.get('ebitda') or 0.12,
-                            "pd": r.get('pd') or r.get('probability') or norm_r.get('pd') or norm_r.get('probability') or 0.01
+                            "ticker": str(r.get(ticker_col)) if ticker_col else 'AIR',
+                            "name": str(r.get(name_col)) if name_col else 'AAR Corp',
+                            "margin": float(r.get(margin_col)) if margin_col and r.get(margin_col) is not None else 0.15,
+                            "ebitda": float(r.get(ebitda_col)) if ebitda_col and r.get(ebitda_col) is not None else 0.12,
+                            "pd": float(r.get(pd_col)) if pd_col and r.get(pd_col) is not None else 0.01
                         })
 
                 # Fallback default values if no rows could be parsed

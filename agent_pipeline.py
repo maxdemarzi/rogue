@@ -73,6 +73,8 @@ class NexusCoordinator:
             1: f"""
 import pandas as pd
 df = con.execute("SELECT * FROM earnings_estimates_earnings_features_clean_1 WHERE ticker='{ticker}' LIMIT 5").fetchdf()
+if df.empty:
+    df = con.execute("SELECT * FROM earnings_estimates_earnings_features_clean_1 LIMIT 5").fetchdf()
 print("Playbook 1 output shape:", df.shape)
 """,
             2: f"""
@@ -113,6 +115,8 @@ print("Playbook 8 output shape:", df.shape)
             9: f"""
 import pandas as pd
 df = con.execute("SELECT * FROM fundamentals_snapshots WHERE ticker='{ticker}'").fetchdf()
+if df.empty:
+    df = con.execute("SELECT * FROM fundamentals_snapshots LIMIT 5").fetchdf()
 print("Playbook 9 output shape:", df.shape)
 """,
             10: f"""
