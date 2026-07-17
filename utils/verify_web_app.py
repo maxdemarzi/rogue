@@ -27,7 +27,8 @@ def audit_html_tags():
     required_ids = [
         'chatLog', 'micBtn', 'promptInput', 'sendBtn',
         'evSlider', 'debtSlider', 'compsBody', 'cy',
-        'koyfinChart', 'rrSlider', 'cdsChart', 'citationCard'
+        'koyfinChart', 'rrSlider', 'cdsChart', 'citationCard',
+        'helpBtn', 'closeHelpBtn', 'helpModal'
     ]
     
     for rid in required_ids:

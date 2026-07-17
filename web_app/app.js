@@ -396,6 +396,30 @@ if (SpeechRecognition) {
     document.getElementById('micBtn').style.display = 'none';
 }
 
+// Help Modal toggles & Prompt setter
+const helpModal = document.getElementById('helpModal');
+const helpBtn = document.getElementById('helpBtn');
+const closeHelpBtn = document.getElementById('closeHelpBtn');
+
+helpBtn.addEventListener('click', () => {
+    helpModal.classList.add('active');
+});
+
+closeHelpBtn.addEventListener('click', () => {
+    helpModal.classList.remove('active');
+});
+
+window.addEventListener('click', (e) => {
+    if (e.target === helpModal) {
+        helpModal.classList.remove('active');
+    }
+});
+
+function setPrompt(promptText) {
+    document.getElementById('promptInput').value = promptText;
+    helpModal.classList.remove('active');
+}
+
 // Initialise defaults on page load
 window.addEventListener('load', () => {
     loadCompsData();

@@ -307,6 +307,7 @@ body {
 
 .slider-controls input[type="range"] {
     -webkit-appearance: none;
+    appearance: none;
     background: rgba(255, 255, 255, 0.1);
     height: 4px;
     border-radius: 2px;
@@ -315,6 +316,7 @@ body {
 
 .slider-controls input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
+    appearance: none;
     width: 14px;
     height: 14px;
     border-radius: 50%;
@@ -445,3 +447,128 @@ body {
     50% { transform: scale(1.1); opacity: 1; }
     100% { transform: scale(0.95); opacity: 0.5; }
 }
+
+/* Help Button & Modal Styles */
+.help-button {
+    background: rgba(0, 240, 255, 0.1);
+    border: 1px solid rgba(0, 240, 255, 0.4);
+    color: #00f0ff;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    margin-left: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background 0.3s, border-color 0.3s, transform 0.2s;
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+}
+
+.help-button:hover {
+    background: rgba(0, 240, 255, 0.25);
+    border-color: #00f0ff;
+    transform: scale(1.1);
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(8px);
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+.modal-content {
+    width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    padding: 25px;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+.modal-header h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 18px;
+    letter-spacing: 1px;
+    color: #ffffff;
+    text-shadow: 0 0 10px rgba(189, 0, 255, 0.8);
+}
+
+.close-button {
+    background: none;
+    border: none;
+    color: #a09cb0;
+    font-size: 24px;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.close-button:hover {
+    color: #ff0055;
+}
+
+.modal-body {
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-body p {
+    font-size: 13px;
+    color: #a09cb0;
+    margin-bottom: 15px;
+}
+
+.playbook-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.playbook-item {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 10px 15px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.playbook-item:hover {
+    background: rgba(0, 240, 255, 0.05);
+    border-color: #00f0ff;
+}
+
+.playbook-item strong {
+    color: #00f0ff;
+}
+

@@ -16,6 +16,7 @@
             <div class="logo-area">
                 <span class="logo-glow"></span>
                 <h1 class="logo-title">ROGO // NEXUS</h1>
+                <button class="help-button" id="helpBtn" title="Show Playbook Directory">?</button>
             </div>
             <div class="status-indicator">
                 <span class="pulse-dot"></span>
@@ -140,6 +141,66 @@
                 Hover over a financial cell or path connector to audit its source citation metadata.
             </div>
         </footer>
+        <!-- Help Modal Overlay -->
+        <div class="modal-overlay" id="helpModal">
+            <div class="modal-content glass-panel">
+                <div class="modal-header">
+                    <h2>NEXUS DUE DILIGENCE PLAYBOOKS</h2>
+                    <button class="close-button" id="closeHelpBtn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Select or click any of the target due diligence queries below to run inside the Nexus Agent Pipeline:</p>
+                    <div class="playbook-list">
+                        <div class="playbook-item" onclick="setPrompt('Compare actual earnings consensus surprise for AIR')">
+                            <strong>1. Earnings Comp Consensus</strong>: "Compare actual earnings consensus surprise for AIR"
+                        </div>
+                        <div class="playbook-item" onclick="setPrompt('Screen startups funding rounds and founder board interlocks')">
+                            <strong>2. Startup VC Screening</strong>: "Screen startups funding rounds and founder board interlocks"
+                        </div>
+                        <div class="playbook-item" onclick="setPrompt('Track bond coupon maturity refinancing stress walls')">
+                            <strong>3. Credit & Debt Maturity Walls</strong>: "Track bond coupon maturity refinancing stress walls"
+                        </div>
+                        <div class="playbook-item" onclick="setPrompt('Determine supplier commodity contagion price exposure')">
+                            <strong>4. Supply Chain Exposure</strong>: "Determine supplier commodity contagion price exposure"
+                        </div>
+                        <div class="playbook-item" onclick="setPrompt('Monitor layoffs and bankruptcy default risk correlation')">
+                            <strong>5. Layoffs & Default Risk</strong>: "Monitor layoffs and bankruptcy default risk correlation"
+                        </div>
+                        <div class="playbook-item" onclick="setPrompt('Track broker ratings sentiment recommendations changes')">
+                            <strong>6. Broker Research Ratings</strong>: "Track broker ratings sentiment recommendations changes"
+                        </div>
+                        <div class="playbook-item" onclick="setPrompt('Compile a generative comps grid of SEC financials')">
+                            <strong>7. SEC Comps Generative Grid</strong>: "Compile a generative comps grid of SEC financials"
+                        </div>
+                        <div class="playbook-item" onclick="setPrompt('Analyze deal covenant and litigation damage default triggers')">
+                            <strong>8. M&A Covenant triggers</strong>: "Analyze deal covenant and litigation damage default triggers"
+                        </div>
+                        <div class="playbook-item" onclick="setPrompt('Evaluate valuation multiple comparables EV EBITDA gross margin')">
+                            <strong>9. Valuation multiples comps</strong>: "Evaluate valuation multiple comparables EV EBITDA gross margin"
+                        </div>
+                        <div class="playbook-item" onclick="setPrompt('Generate an IC memo pitchbook with citations')">
+                            <strong>10. IC Memo & Citations</strong>: "Generate an IC memo pitchbook with citations"
+                        </div>
+                        <div class="playbook-item" onclick="setPrompt('Generate a live Excel model sheet with projection formulas')">
+                            <strong>11. Live Formulas Excel Modeler</strong>: "Generate a live Excel model sheet with projection formulas"
+                        </div>
+                        <div class="playbook-item" onclick="setPrompt('Run the weakly connected components supplier contagion simulator')">
+                            <strong>12. Supplier Distress Contagion</strong>: "Run the weakly connected components supplier contagion simulator"
+                        </div>
+                        <div class="playbook-item" onclick="setPrompt('Run the prescriptive LBO target selection portfolio optimizer')">
+                            <strong>13. LBO Target Selection MIP</strong>: "Run the prescriptive LBO target selection portfolio optimizer"
+                        </div>
+                        <div class="playbook-item" onclick="setPrompt('Trace the Bayesian information leak paths for suspect insider trades')">
+                            <strong>14. Insider Leak path tracer</strong>: "Trace the Bayesian information leak paths for suspect insider trades"
+                        </div>
+                        <div class="playbook-item" onclick="setPrompt('Solve optimal sovereign allocations for FX carry trade swap basis spreads')">
+                            <strong>15. Macro FX Carry Trade LP</strong>: "Solve optimal sovereign allocations for FX carry trade swap basis spreads"
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Application Script -->
