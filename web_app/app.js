@@ -123,7 +123,7 @@ function loadCompsData(payload) {
     tbody.innerHTML = '';
     
     // Fallback default comps list if no dataset returns
-    const items = (payload && payload.rows) || [
+    const items = (payload && payload.rows && payload.rows.length > 0) ? payload.rows : [
         { ticker: 'AAPL', name: 'Apple Inc.', margin: 0.38, ebitda: 0.32, pd: 0.001 },
         { ticker: 'MSFT', name: 'Microsoft Corp.', margin: 0.42, ebitda: 0.36, pd: 0.0005 },
         { ticker: 'GOOGL', name: 'Alphabet Inc.', margin: 0.29, ebitda: 0.24, pd: 0.002 },
