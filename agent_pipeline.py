@@ -212,6 +212,21 @@ print("Playbook 24 Commodity hedging output shape:", df.shape)
         Executes the full Nexus pipeline: routes the query, generates execution code,
         validates the AST sandbox, runs the code, and compiles output statistics.
         """
+        # Extract ticker from prompt if present (uppercase 3-4 letter words or common tickers)
+        ticker_match = re.search(r'\b([A-Z]{3,4})\b', prompt)
+        if ticker_match:
+            ticker = ticker_match.group(1)
+        else:
+            for t in ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'AEE', 'ALB', 'AMD', 'AON', 'AZO']:
+                if t.lower() in prompt.lower():
+                    ticker = t
+                    break
+
+        # Extract 4-digit year from prompt if present
+        year_match = re.search(r'\b(20\d{2})\b', prompt)
+        if year_match:
+            year = int(year_match.group(1))
+
         # 1. Routing
         playbook_id = self.determine_playbook(prompt)
         broker = self.determine_broker(playbook_id)
