@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rogo Nexus Analyst Terminal</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Chart.js and Cytoscape.js CDNs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+</head>
+<body>
+    <div class="terminal-container">
+        <!-- Header -->
+        <header class="terminal-header">
+            <div class="logo-area">
+                <span class="logo-glow"></span>
+                <h1 class="logo-title">ROGO // NEXUS</h1>
+            </div>
+            <div class="status-indicator">
+                <span class="pulse-dot"></span>
+                <span class="status-text">ANALYST ENGINE CONNECTED</span>
+            </div>
+        </header>
+
+        <!-- Main split workspace -->
+        <div class="workspace-split">
+            <!-- Left Pane: Chat & Prompt Controller -->
+            <section class="left-pane">
+                <div class="pane-header">NEXUS COGNITIVE ROUTER</div>
+                
+                <!-- Chat log -->
+                <div class="chat-log" id="chatLog">
+                    <div class="chat-message system">
+                        Welcome to Rogo Nexus. Enter a query or select a playbook parameter to begin.
+                    </div>
+                </div>
+
+                <!-- Input Console -->
+                <div class="input-console">
+                    <button class="mic-button" id="micBtn" title="Speech to query dictation">
+                        <svg viewBox="0 0 24 24" width="24" height="24">
+                            <path fill="currentColor" d="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z" />
+                        </svg>
+                    </button>
+                    <textarea class="prompt-input" id="promptInput" placeholder="Dictate or type due diligence query (e.g. Compare actual earnings consensus surprise for AIR)..."></textarea>
+                    <button class="send-button" id="sendBtn">RUN PIPELINE</button>
+                </div>
+            </section>
+
+            <!-- Right Pane: Interactive Visualization Canvas -->
+            <section class="right-pane">
+                <div class="pane-header">INTERACTIVE VISUALIZATION HUB</div>
+                
+                <!-- View Tabs -->
+                <div class="viz-tabs">
+                    <button class="tab-button active" onclick="switchViz('compsGrid')">Hebbia Matrix</button>
+                    <button class="tab-button" onclick="switchViz('redliner')">AlphaSense Redlines</button>
+                    <button class="tab-button" onclick="switchViz('graphCanvas')">Board Pathfinder</button>
+                    <button class="tab-button" onclick="switchViz('chartPanel')">Koyfin Multiples</button>
+                    <button class="tab-button" onclick="switchViz('cdsPanel')">CDS Defaults</button>
+                </div>
+
+                <!-- View Panels -->
+                <div class="viz-content">
+                    <!-- Hebbia Comps Grid -->
+                    <div class="viz-panel active" id="compsGrid">
+                        <div class="slider-controls">
+                            <label>Purchase Multiple (EV/EBITDA): <span id="evVal">12.0x</span>
+                                <input type="range" min="5" max="25" step="0.5" value="12" id="evSlider">
+                            </label>
+                            <label>LBO Debt Portion %: <span id="debtVal">60%</span>
+                                <input type="range" min="20" max="80" step="5" value="60" id="debtSlider">
+                            </label>
+                        </div>
+                        <div class="comps-table-container">
+                            <table class="comps-table">
+                                <thead>
+                                    <tr>
+                                        <th>Ticker</th>
+                                        <th>Company Name</th>
+                                        <th>Operating Margin</th>
+                                        <th>EBITDA Margin</th>
+                                        <th>Merton Default Risk</th>
+                                        <th>Acquisition IRR %</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="compsBody">
+                                    <!-- Dynamic rows loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- AlphaSense Redliner -->
+                    <div class="viz-panel" id="redliner">
+                        <div class="redline-comparison">
+                            <div class="redline-column">
+                                <h3>FY2025 Statement</h3>
+                                <div class="redline-text text-old">
+                                    The company is subject to various regulatory challenges related to output capacities. Operational cash flows remain positive under baseline assumptions. We foresee no material litigation concerns.
+                                </div>
+                            </div>
+                            <div class="redline-column">
+                                <h3>FY2026 Statement</h3>
+                                <div class="redline-text text-new">
+                                    The company is <span class="highlight-add">highly exposed</span> to various regulatory challenges related to output capacities. <span class="highlight-delete">Operational cash flows remain positive under baseline assumptions.</span> <span class="highlight-add">We face significant litigation penalties exceeding $50M from active investigations.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cytoscape Board Graph -->
+                    <div class="viz-panel" id="graphCanvas">
+                        <div id="cy" style="width: 100%; height: 100%;"></div>
+                    </div>
+
+                    <!-- Koyfin Multiples Chart -->
+                    <div class="viz-panel" id="chartPanel">
+                        <canvas id="koyfinChart"></canvas>
+                    </div>
+
+                    <!-- Bloomberg CDS Curves -->
+                    <div class="viz-panel" id="cdsPanel">
+                        <div class="slider-controls">
+                            <label>Assumed Recovery Rate %: <span id="rrVal">40%</span>
+                                <input type="range" min="10" max="90" step="5" value="40" id="rrSlider">
+                            </label>
+                        </div>
+                        <canvas id="cdsChart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Bottom Pane: SEC Source Citation Card -->
+        <footer class="terminal-footer">
+            <div class="footer-title">SEC SOURCE AUDIT TRAIL</div>
+            <div class="citation-card" id="citationCard">
+                Hover over a financial cell or path connector to audit its source citation metadata.
+            </div>
+        </footer>
+    </div>
+
+    <!-- Application Script -->
+    <script src="app.js"></script>
+</body>
+</html>
