@@ -226,5 +226,5 @@ print("Playbook 24 Commodity hedging output shape:", df.shape)
             "playbook_id": playbook_id,
             "broker": broker,
             "success": True,
-            "output_keys": list(locals_dict.keys())
+            "outputs": locals_dict
         }
