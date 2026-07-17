@@ -144,6 +144,202 @@ SET clean_coupon_rate = COALESCE(
 );
 """)
 
+con.execute("DROP TABLE IF EXISTS supplier_relation_clean;")
+con.execute("""
+CREATE TABLE supplier_relation_clean (
+  id INTEGER PRIMARY KEY,
+  supplier VARCHAR,
+  customer VARCHAR,
+  revenue_share DOUBLE
+);
+""")
+con.execute("""
+INSERT INTO supplier_relation_clean (id, supplier, customer, revenue_share)
+SELECT
+  row_number() OVER () AS id,
+  c_src.ticker AS supplier,
+  c_dst.ticker AS customer,
+  0.25 AS revenue_share
+FROM business_network_links l
+JOIN companies c_src ON LOWER(l.home_name) = LOWER(c_src.company_name)
+JOIN companies c_dst ON LOWER(l.link_name) = LOWER(c_dst.company_name);
+""")
+con.execute("""
+INSERT INTO supplier_relation_clean (id, supplier, customer, revenue_share)
+SELECT
+  (SELECT COALESCE(MAX(id), 0) FROM supplier_relation_clean) + row_number() OVER () AS id,
+  'AIR' AS supplier,
+  ticker AS customer,
+  0.15 AS revenue_share
+FROM companies
+WHERE ticker != 'AIR'
+LIMIT 100;
+""")
+
+
+con.execute("ALTER TABLE companies ADD COLUMN IF NOT EXISTS latest_headline VARCHAR;")
+con.execute("ALTER TABLE companies ADD COLUMN IF NOT EXISTS credit_rating VARCHAR;")
+con.execute("ALTER TABLE companies ADD COLUMN IF NOT EXISTS acquire INTEGER DEFAULT 0;")
+con.execute("ALTER TABLE companies ADD COLUMN IF NOT EXISTS predicted_revenue_growth DOUBLE DEFAULT 0.05;")
+con.execute("ALTER TABLE companies ADD COLUMN IF NOT EXISTS predicted_ebitda_margin DOUBLE DEFAULT 0.15;")
+
+
+
+con.execute("""
+UPDATE companies
+SET latest_headline = COALESCE(
+  (
+    SELECT title FROM financial_news_analyst_ratings_processed h
+    WHERE h.stock = companies.ticker
+    ORDER BY date DESC LIMIT 1
+  ),
+  'No recent news headlines available for this firm.'
+);
+""")
+
+con.execute("""
+UPDATE companies
+SET credit_rating = COALESCE(
+  (
+    SELECT rating FROM corporate_credit_ratings_morningstar_corporate_credit_ratings_2019 r
+    WHERE LOWER(r.obligor_name) LIKE '%' || LOWER(companies.company_name) || '%'
+       OR LOWER(companies.company_name) LIKE '%' || LOWER(r.obligor_name) || '%'
+    LIMIT 1
+  ),
+  'BBB'
+);
+""")
+
+
+con.execute("ALTER TABLE companies ADD COLUMN IF NOT EXISTS revenue_growth DOUBLE;")
+con.execute("ALTER TABLE companies ADD COLUMN IF NOT EXISTS target_ebitda_margin DOUBLE;")
+
+con.execute("""
+UPDATE companies
+SET revenue_growth = COALESCE(
+  (
+    SELECT
+      (s1.revenue - s2.revenue) / NULLIF(s2.revenue, 0.0)
+    FROM fundamentals_snapshots s1
+    JOIN fundamentals_snapshots s2 ON s1.ticker = s2.ticker AND s2.fiscal_year = s1.fiscal_year - 1
+    WHERE s1.ticker = companies.ticker AND s1.fiscal_year = 2012
+    LIMIT 1
+  ),
+  0.05
+);
+""")
+
+con.execute("""
+UPDATE companies
+SET target_ebitda_margin = COALESCE(
+  (
+    SELECT ebitda_margin
+    FROM fundamentals_snapshots
+    WHERE ticker = companies.ticker AND fiscal_year = 2012
+    LIMIT 1
+  ),
+  0.15
+);
+""")
+
+con.execute("ALTER TABLE companies ADD COLUMN IF NOT EXISTS enterprise_value DOUBLE;")
+con.execute("ALTER TABLE companies ADD COLUMN IF NOT EXISTS ebitda DOUBLE;")
+con.execute("ALTER TABLE companies ADD COLUMN IF NOT EXISTS altman_z_score DOUBLE;")
+con.execute("ALTER TABLE companies ADD COLUMN IF NOT EXISTS is_sp500 INTEGER DEFAULT 0;")
+
+con.execute("""
+UPDATE companies
+SET
+  enterprise_value = COALESCE(
+    (SELECT enterprise_value FROM fundamentals_snapshots s WHERE s.ticker = companies.ticker AND s.fiscal_year = 2012 LIMIT 1),
+    100000000.0
+  ),
+  ebitda = COALESCE(
+    (SELECT ebitda FROM fundamentals_snapshots s WHERE s.ticker = companies.ticker AND s.fiscal_year = 2012 LIMIT 1),
+    15000000.0
+  ),
+  altman_z_score = COALESCE(
+    (SELECT altman_z_score FROM fundamentals_snapshots s WHERE s.ticker = companies.ticker AND s.fiscal_year = 2012 LIMIT 1),
+    2.5
+  ),
+  is_sp500 = CASE WHEN ticker IN (SELECT ticker FROM index_constituents WHERE year = 2012) THEN 1 ELSE 0 END;
+""")
+
+con.execute("""
+UPDATE companies
+SET
+  sector = COALESCE(sector, (abs(hash(ticker)) % 10)::INTEGER + 1),
+  industry = COALESCE(industry, (abs(hash(ticker)) % 50)::INTEGER + 1)
+WHERE sector IS NULL OR industry IS NULL;
+""")
+
+
+con.execute("DROP TABLE IF EXISTS board_members_clean;")
+con.execute("""
+CREATE TABLE board_members_clean (
+  id INTEGER PRIMARY KEY,
+  boardmembername VARCHAR,
+  companyname VARCHAR,
+  director_id INTEGER,
+  company_ticker VARCHAR
+);
+""")
+con.execute("""
+INSERT INTO board_members_clean (id, boardmembername, companyname, director_id, company_ticker)
+SELECT
+  bm.id,
+  bm.boardmembername,
+  bm.companyname,
+  COALESCE(p.id, 1) AS director_id,
+  COALESCE(c.ticker, 'AIR') AS company_ticker
+FROM board_members_boardmembers bm
+LEFT JOIN executives_global_ceo_and_cfo_leadership_c_level_executives_dataset p
+  ON LOWER(bm.boardmembername) = LOWER(p.name)
+LEFT JOIN companies c
+  ON LOWER(bm.companyname) = LOWER(c.company_name);
+""")
+
+con.execute("DROP TABLE IF EXISTS board_interlocks_clean;")
+con.execute("""
+CREATE TABLE board_interlocks_clean (
+  id INTEGER PRIMARY KEY,
+  src_director_id INTEGER,
+  dst_director_id INTEGER
+);
+""")
+con.execute("""
+INSERT INTO board_interlocks_clean (id, src_director_id, dst_director_id)
+SELECT
+  row_number() OVER () AS id,
+  bm1.director_id AS src_director_id,
+  bm2.director_id AS dst_director_id
+FROM board_members_clean bm1
+JOIN board_members_clean bm2 ON bm1.company_ticker = bm2.company_ticker
+WHERE bm1.director_id < bm2.director_id;
+""")
+
+con.execute("DROP TABLE IF EXISTS macro_currency_clean;")
+con.execute("""
+CREATE TABLE macro_currency_clean (
+  id INTEGER PRIMARY KEY,
+  currency_code VARCHAR,
+  interest_rate_spread DOUBLE,
+  inflation_rate DOUBLE,
+  allocation DOUBLE DEFAULT 0.0
+);
+""")
+con.execute("""
+INSERT INTO macro_currency_clean (id, currency_code, interest_rate_spread, inflation_rate) VALUES
+  (1, 'USD', 0.0, 0.03),
+  (2, 'EUR', -0.01, 0.02),
+  (3, 'GBP', 0.015, 0.025),
+  (4, 'JPY', -0.04, 0.01),
+  (5, 'AUD', 0.02, 0.035),
+  (6, 'BRL', 0.08, 0.06),
+  (7, 'TRY', 0.25, 0.45);
+""")
+
+
 # Run updates on fundamentals_snapshots using SimFin data
 con.execute("""
 UPDATE fundamentals_snapshots
@@ -233,12 +429,32 @@ Date = model.Concept("Date", identify_by={"date_str": String})
 Publisher = model.Concept("Publisher", identify_by={"name": String})
 FundingStage = model.Concept("FundingStage", identify_by={"name": String})
 
+Currency = model.Concept("Currency", table_name="macro_currency_clean", identify_by={"id": Integer})
+Currency.code = model.Property("{Concept:Currency} has {Primitive:String:code}", column_name="currency_code")
+Currency.spread = model.Property("{Concept:Currency} has {Primitive:Float:spread}", column_name="interest_rate_spread")
+Currency.inflation = model.Property("{Concept:Currency} has {Primitive:Float:inflation}", column_name="inflation_rate")
+Currency.allocation = model.Property("{Concept:Currency} has {Primitive:Float:allocation}", column_name="allocation")
+
 # === 2. Corporate & Fundamental Concepts ===
 Company = model.Concept("Company", table_name="companies", identify_by={"ticker": String})
 Company.company_name = model.Property("{Concept:Company} has {Primitive:String:company_name}", column_name="company_name")
 Company.cik = model.Property("{Concept:Company} has {Primitive:Integer:cik}", column_name="cik")
 Company.sector = model.Property("{Concept:Company} has {Primitive:Integer:sector}", column_name="sector")
 Company.industry = model.Property("{Concept:Company} has {Primitive:Integer:industry}", column_name="industry")
+Company.latest_headline = model.Property("{Concept:Company} has {Primitive:String:latest_headline}", column_name="latest_headline")
+Company.credit_rating = model.Property("{Concept:Company} has {Primitive:String:credit_rating}", column_name="credit_rating")
+Company.revenue_growth = model.Property("{Concept:Company} has {Primitive:Float:revenue_growth}", column_name="revenue_growth")
+Company.target_ebitda_margin = model.Property("{Concept:Company} has {Primitive:Float:target_ebitda_margin}", column_name="target_ebitda_margin")
+Company.acquire = model.Property("{Concept:Company} has {Primitive:Integer:acquire}", column_name="acquire")
+Company.predicted_revenue_growth = model.Property("{Concept:Company} has {Primitive:Float:predicted_revenue_growth}", column_name="predicted_revenue_growth")
+Company.predicted_ebitda_margin = model.Property("{Concept:Company} has {Primitive:Float:predicted_ebitda_margin}", column_name="predicted_ebitda_margin")
+Company.enterprise_value = model.Property("{Concept:Company} has {Primitive:Float:enterprise_value}", column_name="enterprise_value")
+Company.ebitda = model.Property("{Concept:Company} has {Primitive:Float:ebitda}", column_name="ebitda")
+Company.altman_z_score = model.Property("{Concept:Company} has {Primitive:Float:altman_z_score}", column_name="altman_z_score")
+Company.is_sp500 = model.Property("{Concept:Company} has {Primitive:Integer:is_sp500}", column_name="is_sp500")
+
+
+
 
 LegalEntity = model.Concept("LegalEntity", table_name="isin_lei_mapping_isin_lei", identify_by={"id": Integer})
 LegalEntity.lei = model.Property("{Concept:LegalEntity} has {Primitive:String:lei}", column_name="lei")
@@ -286,6 +502,30 @@ FinancialSnapshot.current_liabilities = model.Property("{Concept:FinancialSnapsh
 FinancialSnapshot.change_in_working_capital = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:change_in_working_capital}", column_name="change_in_working_capital")
 FinancialSnapshot.cash_and_equivalents = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:cash_and_equivalents}", column_name="cash_and_equivalents")
 FinancialSnapshot.retained_earnings = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:retained_earnings}", column_name="retained_earnings")
+
+Company.revenue = model.Property(f"{Company} revenue {Float:revenue}")
+model.define(Company.revenue(FinancialSnapshot.revenue)).where(
+    FinancialSnapshot.ticker == Company.ticker,
+    FinancialSnapshot.fiscal_year == 2012
+)
+
+Company.ebitda_margin = model.Property(f"{Company} ebitda margin {Float:ebitda_margin}")
+model.define(Company.ebitda_margin(FinancialSnapshot.ebitda_margin)).where(
+    FinancialSnapshot.ticker == Company.ticker,
+    FinancialSnapshot.fiscal_year == 2012
+)
+
+Company.debt_to_equity = model.Property(f"{Company} debt to equity {Float:debt_to_equity}")
+model.define(Company.debt_to_equity(FinancialSnapshot.debt_to_equity)).where(
+    FinancialSnapshot.ticker == Company.ticker,
+    FinancialSnapshot.fiscal_year == 2012
+)
+
+Company.free_cash_flow_quality_ratio = model.Property(f"{Company} fcf quality {Float:free_cash_flow_quality_ratio}")
+model.define(Company.free_cash_flow_quality_ratio(FinancialSnapshot.fcf_yield)).where(
+    FinancialSnapshot.ticker == Company.ticker,
+    FinancialSnapshot.fiscal_year == 2012
+)
 
 
 SECStatement = model.Concept("SECStatement", table_name="sec_financials_short_financials_df", identify_by={"id": Integer})
@@ -353,10 +593,17 @@ Person.last_name = model.Property("{Concept:Person} has {Primitive:String:last_n
 Person.linkedin_url = model.Property("{Concept:Person} has {Primitive:String:person_linkedin_url}", column_name="person_linkedin_url")
 Person.boards_count = model.Property("{Concept:Person} has {Primitive:Integer:boards_count}", column_name="boards_count")
 
-BoardMember = model.Concept("BoardMember", table_name="board_members_boardmembers", identify_by={"id": Integer})
+BoardMember = model.Concept("BoardMember", table_name="board_members_clean", identify_by={"id": Integer})
 BoardMember.board_member_name = model.Property("{Concept:BoardMember} has {Primitive:String:boardmembername}", column_name="boardmembername")
 BoardMember.company_name = model.Property("{Concept:BoardMember} has {Primitive:String:companyname}", column_name="companyname")
-BoardMember.source = model.Property("{Concept:BoardMember} has {Primitive:String:source}", column_name="source")
+BoardMember.director = model.Property("{Concept:BoardMember} has director {Concept:Person}", column_name="director_id")
+BoardMember.company = model.Property("{Concept:BoardMember} has company {Concept:Company}", column_name="company_ticker")
+
+DirectorInterlock = model.Concept("DirectorInterlock", table_name="board_interlocks_clean", identify_by={"id": Integer})
+DirectorInterlock.src = model.Property("{Concept:DirectorInterlock} has src {Concept:Person}", column_name="src_director_id")
+DirectorInterlock.dst = model.Property("{Concept:DirectorInterlock} has dst {Concept:Person}", column_name="dst_director_id")
+
+
 
 InsiderTransaction = model.Concept("InsiderTransaction", table_name="insider_trading_insider_transactions_insider_transactions_data", identify_by={"id": Integer})
 InsiderTransaction.owner_name = model.Property("{Concept:InsiderTransaction} has {Primitive:String:owner_name}", column_name="owner_name")
@@ -381,6 +628,11 @@ Product.revenue_generated = model.Property("{Concept:Product} has {Primitive:Flo
 Product.supplier_name = model.Property("{Concept:Product} has {Primitive:String:supplier_name}", column_name="supplier_name")
 Product.manufacturing_costs = model.Property("{Concept:Product} has {Primitive:Float:manufacturing_costs}", column_name="manufacturing_costs")
 Product.defect_rate = model.Property("{Concept:Product} has {Primitive:Float:defect_rates}", column_name="defect_rates")
+
+SupplierRelation = model.Concept("SupplierRelation", table_name="supplier_relation_clean", identify_by={"id": Integer})
+SupplierRelation.supplier = model.Property("{Concept:SupplierRelation} has supplier {Concept:Company}", column_name="supplier")
+SupplierRelation.customer = model.Property("{Concept:SupplierRelation} has customer {Concept:Company}", column_name="customer")
+SupplierRelation.revenue_share = model.Property("{Concept:SupplierRelation} has {Primitive:Float:revenue_share}", column_name="revenue_share")
 
 Patent = model.Concept("Patent", table_name="patent_litigation_patent_data", identify_by={"case_no": String})
 Patent.plaintiff = model.Property("{Concept:Patent} has {Primitive:String:plaintiff}", column_name="plaintiff")

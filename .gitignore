@@ -1,0 +1,22 @@
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Databases and data files
+*.duckdb
+*.duckdb.wal
+data/
+etl/
+*.db
+
+# Spreadsheets and documents
+*.xlsx
+*.csv
