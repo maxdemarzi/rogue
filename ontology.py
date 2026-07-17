@@ -318,6 +318,12 @@ JOIN board_members_clean bm2 ON bm1.company_ticker = bm2.company_ticker
 WHERE bm1.director_id < bm2.director_id;
 """)
 
+con.execute("""
+UPDATE insider_trading_insider_transactions_insider_transactions_data
+SET conviction_score = confidence_score / 100.0
+WHERE confidence_score IS NOT NULL;
+""")
+
 con.execute("DROP TABLE IF EXISTS macro_currency_clean;")
 con.execute("""
 CREATE TABLE macro_currency_clean (

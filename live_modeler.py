@@ -83,7 +83,7 @@ def generate_live_excel(ticker="AIR", year=2012, filename="financial_model_live.
     
     formulas = [
         ("Gross Profit ($)", "=B5-B6"),
-        ("Gross Profit Margin (%)", "=C19/B5"),
+        ("Gross Profit Margin (%)", "=E3/B5"),
         ("EBITDA Margin (%)", "=B8/B5"),
         ("Debt-to-Equity (%)", "=B10/B14"),  # Total Debt / Market Capitalization (Equity proxy)
         ("Interest Coverage (x)", "=B7/B9"),

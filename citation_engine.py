@@ -15,7 +15,7 @@ CELL_MAPPING = {
 
 FORMULA_MAPPING = {
     "E3": {"formula": "=B5-B6", "label": "Gross Profit", "dependencies": ["B5", "B6"]},
-    "E4": {"formula": "=C19/B5", "label": "Gross Profit Margin (%)", "dependencies": ["B5", "E3"]},
+    "E4": {"formula": "=E3/B5", "label": "Gross Profit Margin (%)", "dependencies": ["B5", "E3"]},
     "E5": {"formula": "=B8/B5", "label": "EBITDA Margin (%)", "dependencies": ["B8", "B5"]},
     "E6": {"formula": "=B10/B14", "label": "Debt-to-Equity (%)", "dependencies": ["B10", "B14"]},
     "E7": {"formula": "=B7/B9", "label": "Interest Coverage (x)", "dependencies": ["B7", "B9"]},
