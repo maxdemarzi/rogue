@@ -3,15 +3,12 @@ import duckdb
 from pyrel_duckdb import Model, Float, Integer, String, Date, DateTime, Boolean
 
 def validate():
-    db_path = '/home/maxdemarzi/rogue/rogue_finance.duckdb'
-    print(f"Connecting to DuckDB at {db_path}...")
-    con = duckdb.connect(db_path, config={"allow_unsigned_extensions": "true"})
-    
     # Try importing ontology
     print("Importing ontology...")
     try:
         import ontology
         model = ontology.model
+        con = ontology.con
     except ImportError as e:
         print(f"Error importing ontology: {e}")
         print("Please ensure ontology.py exists and is syntactically correct.")

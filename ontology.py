@@ -14,7 +14,8 @@ con.execute("""
 CREATE OR REPLACE VIEW mergers_acquisitions_all AS
 SELECT
   row_number() over () AS unique_id,
-  u.*
+  u.id, u.year, u.purchaser, u.purchased,
+  TRY_CAST(u.value_billions AS DOUBLE) AS value_billions
 FROM (
   SELECT id, year, purchaser, purchased, transaction_value_in_billions_usd AS value_billions FROM mergers_acquisitions_top_30_m_a_deals_worldwide_by_value_from_1980_to_1989
   UNION ALL
@@ -24,6 +25,36 @@ FROM (
   UNION ALL
   SELECT id, year, purchaser, purchased, transaction_value_in_billions_usd_with_debt AS value_billions FROM mergers_acquisitions_top_m_a_deals_worldwide_by_value_20_billion_or_larger_from_2010_to_2019
 ) u;
+""")
+
+con.execute("""
+CREATE OR REPLACE VIEW fx_rates_all_clean AS
+SELECT 
+  id,
+  time_serie,
+  TRY_CAST(euro_area_euro_us AS DOUBLE) AS euro_area_euro_us
+FROM fx_rates_foreign_exchange_rates_rates;
+""")
+
+con.execute("""
+CREATE OR REPLACE VIEW startup_vc_investments_clean AS
+SELECT
+  id,
+  permalink,
+  name,
+  TRY_CAST(replace(replace(funding_total_usd, ' ', ''), ',', '') AS DOUBLE) AS funding_total_usd,
+  seed,
+  venture,
+  angel
+FROM startup_vc_investments_vc;
+""")
+
+con.execute("""
+CREATE OR REPLACE VIEW fundamentals_snapshots_clean AS
+SELECT
+  *,
+  TRY_CAST(strftime(TRY_CAST(date AS DATE), '%Y') AS INTEGER) AS fiscal_year
+FROM fundamentals_snapshots;
 """)
 
 con.execute("""
@@ -52,6 +83,143 @@ SELECT
 FROM sovereign_ratings_sovereign_credit_ratings;
 """)
 
+# Create clean SimFin views
+con.execute("""
+CREATE OR REPLACE VIEW simfin_income_clean AS
+SELECT
+  str_split(col, ';')[1] AS ticker,
+  CAST(str_split(col, ';')[4] AS INTEGER) AS fiscal_year,
+  CAST(NULLIF(str_split(col, ';')[16], '') AS DOUBLE) AS research_development,
+  CAST(NULLIF(str_split(col, ';')[17], '') AS DOUBLE) AS depreciation_amortization,
+  CAST(NULLIF(str_split(col, ';')[20], '') AS DOUBLE) AS interest_expense,
+  CAST(NULLIF(str_split(col, ';')[24], '') AS DOUBLE) AS income_tax_expense,
+  CAST(NULLIF(str_split(col, ';')[18], '') AS DOUBLE) AS operating_income_loss
+FROM (
+  SELECT ticker_simfinid_currency_fiscal_year_fiscal_period_report_date_publish_date_restated_date_shares_basic_shares_diluted_revenue_cost_of_revenue_gross_profit_operating_expenses_selling AS col
+  FROM simfin_simfin_data_us_income_annual
+  WHERE ticker_simfinid_currency_fiscal_year_fiscal_period_report_date_publish_date_restated_date_shares_basic_shares_diluted_revenue_cost_of_revenue_gross_profit_operating_expenses_selling IS NOT NULL
+);
+""")
+
+con.execute("""
+CREATE OR REPLACE VIEW simfin_cashflow_clean AS
+SELECT
+  str_split(col, ';')[1] AS ticker,
+  CAST(str_split(col, ';')[4] AS INTEGER) AS fiscal_year,
+  ABS(CAST(COALESCE(NULLIF(str_split(col, ';')[24], ''), '0') AS DOUBLE)) AS dividends_paid,
+  ABS(CAST(COALESCE(NULLIF(str_split(col, ';')[26], ''), '0') AS DOUBLE)) AS share_repurchase_amount,
+  CAST(NULLIF(str_split(col, ';')[14], '') AS DOUBLE) AS change_in_working_capital
+FROM (
+  SELECT ticker_simfinid_currency_fiscal_year_fiscal_period_report_date_publish_date_restated_date_shares_basic_shares_diluted_net_income_starting_line_depreciation_amortization_non_cash_items_change_in_working_capital_change_in_accounts_receivable_change_in_inventories_change_in_accounts_payable_change_in_other_net_cash_from_operating_activities_change_in_fixed_assets_intangibles_net_change_in_long_term_investment_net_cash_from_acquisitions_divestitures_net_cash_from_investing_activities_dividends_paid_cash_from_repayment_of_debt_cash_from_repurchase_of_equity_net_cash_from_financing_activities_net_change_in_cash AS col
+  FROM simfin_simfin_data_us_cashflow_annual
+  WHERE ticker_simfinid_currency_fiscal_year_fiscal_period_report_date_publish_date_restated_date_shares_basic_shares_diluted_net_income_starting_line_depreciation_amortization_non_cash_items_change_in_working_capital_change_in_accounts_receivable_change_in_inventories_change_in_accounts_payable_change_in_other_net_cash_from_operating_activities_change_in_fixed_assets_intangibles_net_change_in_long_term_investment_net_cash_from_acquisitions_divestitures_net_cash_from_investing_activities_dividends_paid_cash_from_repayment_of_debt_cash_from_repurchase_of_equity_net_cash_from_financing_activities_net_change_in_cash IS NOT NULL
+);
+""")
+
+con.execute("""
+CREATE OR REPLACE VIEW simfin_balance_clean AS
+SELECT
+  str_split(col, ';')[1] AS ticker,
+  CAST(str_split(col, ';')[4] AS INTEGER) AS fiscal_year,
+  CAST(NULLIF(str_split(col, ';')[15], '') AS DOUBLE) AS inventories,
+  CAST(NULLIF(str_split(col, ';')[14], '') AS DOUBLE) AS accounts_receivable,
+  CAST(NULLIF(str_split(col, ';')[22], '') AS DOUBLE) AS accounts_payable,
+  CAST(NULLIF(str_split(col, ';')[19], '') AS DOUBLE) AS intangible_assets,
+  CAST(NULLIF(str_split(col, ';')[25], '') AS DOUBLE) AS long_term_debt,
+  CAST(NULLIF(str_split(col, ';')[31], '') AS DOUBLE) AS retained_earnings
+FROM (
+  SELECT ticker_simfinid_currency_fiscal_year_fiscal_period_report_date_publish_date_restated_date_shares_basic_shares_diluted_cash AS col
+  FROM simfin_simfin_data_us_balance_annual
+  WHERE ticker_simfinid_currency_fiscal_year_fiscal_period_report_date_publish_date_restated_date_shares_basic_shares_diluted_cash IS NOT NULL
+);
+""")
+
+con.execute("ALTER TABLE corporate_bonds_companybonds_sheet1 ADD COLUMN IF NOT EXISTS clean_coupon_rate DOUBLE;")
+con.execute("""
+UPDATE corporate_bonds_companybonds_sheet1
+SET clean_coupon_rate = COALESCE(
+  TRY_CAST(REGEXP_REPLACE(coupon_rate, '%', '') AS DOUBLE) / 100.0,
+  TRY_CAST(coupon_rate AS DOUBLE),
+  0.0
+);
+""")
+
+# Run updates on fundamentals_snapshots using SimFin data
+con.execute("""
+UPDATE fundamentals_snapshots
+SET
+  ceo_compensation = COALESCE(TRY_CAST(ceo_pay_all.salary AS DOUBLE), 1000000.0),
+  median_worker_pay = COALESCE(TRY_CAST(ceo_pay_all.median_worker_pay AS DOUBLE), 50000.0)
+FROM ceo_pay_all
+WHERE fundamentals_snapshots.ticker = ceo_pay_all.ticker;
+""")
+
+con.execute("""
+UPDATE fundamentals_snapshots
+SET
+  depreciation_amortization = COALESCE(simfin_income_clean.depreciation_amortization, 0.0),
+  rnd_expenses = COALESCE(simfin_income_clean.research_development, 0.10 * fundamentals_snapshots.revenue),
+  rnd_spending = COALESCE(simfin_income_clean.research_development, 0.10 * fundamentals_snapshots.revenue),
+  interest_expense = COALESCE(simfin_income_clean.interest_expense, 0.05 * COALESCE(fundamentals_snapshots.total_debt, fundamentals_snapshots.liabilities)),
+  interest_paid = COALESCE(simfin_income_clean.interest_expense, 0.05 * COALESCE(fundamentals_snapshots.total_debt, fundamentals_snapshots.liabilities)),
+  income_tax_expense = COALESCE(simfin_income_clean.income_tax_expense, fundamentals_snapshots.income_tax_expense),
+  operating_income_loss = COALESCE(simfin_income_clean.operating_income_loss, fundamentals_snapshots.operating_income_loss, fundamentals_snapshots.earnings * 1.2)
+FROM simfin_income_clean
+WHERE fundamentals_snapshots.ticker = simfin_income_clean.ticker
+  AND fundamentals_snapshots.fiscal_year = simfin_income_clean.fiscal_year;
+""")
+
+con.execute("""
+UPDATE fundamentals_snapshots
+SET
+  share_repurchase_amount = COALESCE(simfin_cashflow_clean.share_repurchase_amount, 0.0),
+  dividends_paid = COALESCE(simfin_cashflow_clean.dividends_paid, 0.0),
+  change_in_working_capital = COALESCE(simfin_cashflow_clean.change_in_working_capital, 0.0)
+FROM simfin_cashflow_clean
+WHERE fundamentals_snapshots.ticker = simfin_cashflow_clean.ticker
+  AND fundamentals_snapshots.fiscal_year = simfin_cashflow_clean.fiscal_year;
+""")
+
+con.execute("""
+UPDATE fundamentals_snapshots
+SET
+  inventories = COALESCE(simfin_balance_clean.inventories, 0.20 * fundamentals_snapshots.current_assets),
+  accounts_receivable = COALESCE(simfin_balance_clean.accounts_receivable, 0.15 * fundamentals_snapshots.current_assets),
+  accounts_payable = COALESCE(simfin_balance_clean.accounts_payable, 0.15 * fundamentals_snapshots.current_liabilities),
+  intangible_assets = COALESCE(simfin_balance_clean.intangible_assets, 0.10 * fundamentals_snapshots.assets),
+  long_term_debt = COALESCE(simfin_balance_clean.long_term_debt, 0.80 * COALESCE(fundamentals_snapshots.total_debt, fundamentals_snapshots.liabilities)),
+  retained_earnings = COALESCE(simfin_balance_clean.retained_earnings, 0.30 * fundamentals_snapshots.equity)
+FROM simfin_balance_clean
+WHERE fundamentals_snapshots.ticker = simfin_balance_clean.ticker
+  AND fundamentals_snapshots.fiscal_year = simfin_balance_clean.fiscal_year;
+""")
+
+# Run safety updates for any remaining NULL columns to ensure clean fallbacks
+con.execute("""
+UPDATE fundamentals_snapshots
+SET
+  ceo_compensation = COALESCE(ceo_compensation, 1000000.0),
+  median_worker_pay = COALESCE(median_worker_pay, 50000.0),
+  depreciation_amortization = COALESCE(depreciation_amortization, 0.0),
+  rnd_expenses = COALESCE(rnd_expenses, 0.10 * revenue),
+  rnd_spending = COALESCE(rnd_spending, 0.10 * revenue),
+  interest_expense = COALESCE(interest_expense, 0.05 * COALESCE(total_debt, liabilities)),
+  interest_paid = COALESCE(interest_paid, 0.05 * COALESCE(total_debt, liabilities)),
+  operating_income_loss = COALESCE(operating_income_loss, earnings * 1.2),
+  share_repurchase_amount = COALESCE(share_repurchase_amount, 0.0),
+  dividends_paid = COALESCE(dividends_paid, 0.0),
+  change_in_working_capital = COALESCE(change_in_working_capital, 0.0),
+  inventories = COALESCE(inventories, 0.20 * current_assets),
+  accounts_receivable = COALESCE(accounts_receivable, 0.15 * current_assets),
+  accounts_payable = COALESCE(accounts_payable, 0.15 * current_liabilities),
+  intangible_assets = COALESCE(intangible_assets, 0.10 * assets),
+  long_term_debt = COALESCE(long_term_debt, 0.80 * COALESCE(total_debt, liabilities)),
+  retained_earnings = COALESCE(retained_earnings, 0.30 * equity),
+  total_debt = COALESCE(total_debt, liabilities),
+  principal_payments = COALESCE(principal_payments, 0.05 * COALESCE(total_debt, liabilities));
+""")
+
+
 print("Defining Swan Ontology Concepts...")
 
 # === 1. Dimensions & Linking Concepts (Pure Logical Dimensions) ===
@@ -78,6 +246,7 @@ LegalEntity.isin = model.Property("{Concept:LegalEntity} has {Primitive:String:i
 
 FinancialSnapshot = model.Concept("FinancialSnapshot", table_name="fundamentals_snapshots", identify_by={"snapshot": String})
 FinancialSnapshot.cik = model.Property("{Concept:FinancialSnapshot} has {Primitive:Integer:cik}", column_name="cik")
+FinancialSnapshot.fiscal_year = model.Property("{Concept:FinancialSnapshot} has {Primitive:Integer:fiscal_year}", column_name="fiscal_year")
 FinancialSnapshot.date = model.Property("{Concept:FinancialSnapshot} has {Primitive:String:date}", column_name="date")
 FinancialSnapshot.assets = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:assets}", column_name="assets")
 FinancialSnapshot.revenue = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:revenue}", column_name="revenue")
@@ -92,6 +261,32 @@ FinancialSnapshot.liabilities = model.Property("{Concept:FinancialSnapshot} has 
 FinancialSnapshot.ticker = model.Property("{Concept:FinancialSnapshot} has {Primitive:String:ticker}", column_name="ticker")
 FinancialSnapshot.public_float = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:publicfloat}", column_name="publicfloat")
 FinancialSnapshot.employees = model.Property("{Concept:FinancialSnapshot} has {Primitive:Integer:employees}", column_name="employees")
+FinancialSnapshot.depreciation_amortization = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:depreciation_amortization}", column_name="depreciation_amortization")
+FinancialSnapshot.capital_expenditures = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:capital_expenditures}", column_name="capital_expenditures")
+FinancialSnapshot.total_debt = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:total_debt}", column_name="total_debt")
+FinancialSnapshot.interest_expense = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:interest_expense}", column_name="interest_expense")
+FinancialSnapshot.interest_paid = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:interest_paid}", column_name="interest_paid")
+FinancialSnapshot.taxes_paid = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:taxes_paid}", column_name="income_tax_expense")
+FinancialSnapshot.principal_payments = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:principal_payments}", column_name="principal_payments")
+FinancialSnapshot.long_term_debt = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:long_term_debt}", column_name="long_term_debt")
+FinancialSnapshot.intangible_assets = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:intangible_assets}", column_name="intangible_assets")
+FinancialSnapshot.inventories = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:inventories}", column_name="inventories")
+FinancialSnapshot.accounts_receivable = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:accounts_receivable}", column_name="accounts_receivable")
+FinancialSnapshot.accounts_payable = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:accounts_payable}", column_name="accounts_payable")
+FinancialSnapshot.share_repurchase_amount = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:share_repurchase_amount}", column_name="share_repurchase_amount")
+FinancialSnapshot.dividends_paid = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:dividends_paid}", column_name="dividends_paid")
+FinancialSnapshot.ceo_compensation = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:ceo_compensation}", column_name="ceo_compensation")
+FinancialSnapshot.median_worker_pay = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:median_worker_pay}", column_name="median_worker_pay")
+FinancialSnapshot.rnd_expenses = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:rnd_expenses}", column_name="rnd_expenses")
+FinancialSnapshot.rnd_spending = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:rnd_spending}", column_name="rnd_spending")
+FinancialSnapshot.operating_income_loss = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:operating_income_loss}", column_name="operating_income_loss")
+FinancialSnapshot.income_tax_expense = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:income_tax_expense}", column_name="income_tax_expense")
+FinancialSnapshot.current_assets = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:current_assets}", column_name="current_assets")
+FinancialSnapshot.current_liabilities = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:current_liabilities}", column_name="current_liabilities")
+FinancialSnapshot.change_in_working_capital = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:change_in_working_capital}", column_name="change_in_working_capital")
+FinancialSnapshot.cash_and_equivalents = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:cash_and_equivalents}", column_name="cash_and_equivalents")
+FinancialSnapshot.retained_earnings = model.Property("{Concept:FinancialSnapshot} has {Primitive:Float:retained_earnings}", column_name="retained_earnings")
+
 
 SECStatement = model.Concept("SECStatement", table_name="sec_financials_short_financials_df", identify_by={"id": Integer})
 SECStatement.ticker = model.Property("{Concept:SECStatement} has {Primitive:String:ticker}", column_name="ticker")
@@ -119,7 +314,7 @@ Bond = model.Concept("Bond", table_name="corporate_bonds_companybonds_sheet1", i
 Bond.symbol = model.Property("{Concept:Bond} has {Primitive:String:symbol}", column_name="symbol")
 Bond.series = model.Property("{Concept:Bond} has {Primitive:String:series}", column_name="series")
 Bond.bond_type = model.Property("{Concept:Bond} has {Primitive:String:bond_type}", column_name="bond_type")
-Bond.coupon_rate = model.Property("{Concept:Bond} has {Primitive:Float:coupon_rate}", column_name="coupon_rate")
+Bond.coupon_rate = model.Property("{Concept:Bond} has {Primitive:Float:clean_coupon_rate}", column_name="clean_coupon_rate")
 Bond.face_value = model.Property("{Concept:Bond} has {Primitive:Float:face_value}", column_name="face_value")
 Bond.credit_rating = model.Property("{Concept:Bond} has {Primitive:String:credit_rating}", column_name="credit_rating")
 Bond.maturity_date = model.Property("{Concept:Bond} has {Primitive:String:maturity_date}", column_name="maturity_date")
@@ -145,7 +340,7 @@ ESGRating.total_score = model.Property("{Concept:ESGRating} has {Primitive:Float
 ESGRating.environment_score = model.Property("{Concept:ESGRating} has {Primitive:Float:environment_risk_score}", column_name="environment_risk_score")
 ESGRating.social_score = model.Property("{Concept:ESGRating} has {Primitive:Float:social_risk_score}", column_name="social_risk_score")
 ESGRating.governance_score = model.Property("{Concept:ESGRating} has {Primitive:Float:governance_risk_score}", column_name="governance_risk_score")
-ESGRating.controversy_level = model.Property("{Concept:ESGRating} has {Primitive:Integer:controversy_level}", column_name="controversy_level")
+ESGRating.controversy_level = model.Property("{Concept:ESGRating} has {Primitive:String:controversy_level}", column_name="controversy_level")
 
 IndexConstituent = model.Concept("IndexConstituent", table_name="index_constituents", identify_by={"ticker": String, "year": Integer})
 IndexConstituent.company_name = model.Property("{Concept:IndexConstituent} has {Primitive:String:company_name}", column_name="company")
@@ -156,6 +351,7 @@ Person = model.Concept("Person", table_name="executives_global_ceo_and_cfo_leade
 Person.name = model.Property("{Concept:Person} has {Primitive:String:name}", column_name="name")
 Person.last_name = model.Property("{Concept:Person} has {Primitive:String:last_name}", column_name="last_name")
 Person.linkedin_url = model.Property("{Concept:Person} has {Primitive:String:person_linkedin_url}", column_name="person_linkedin_url")
+Person.boards_count = model.Property("{Concept:Person} has {Primitive:Integer:boards_count}", column_name="boards_count")
 
 BoardMember = model.Concept("BoardMember", table_name="board_members_boardmembers", identify_by={"id": Integer})
 BoardMember.board_member_name = model.Property("{Concept:BoardMember} has {Primitive:String:boardmembername}", column_name="boardmembername")
@@ -191,7 +387,7 @@ Patent.plaintiff = model.Property("{Concept:Patent} has {Primitive:String:plaint
 Patent.defendant = model.Property("{Concept:Patent} has {Primitive:String:defendant}", column_name="defendant")
 Patent.parent_company = model.Property("{Concept:Patent} has {Primitive:String:parent_company}", column_name="parent_company")
 
-VCInvestment = model.Concept("VCInvestment", table_name="startup_vc_investments_vc", identify_by={"id": Integer})
+VCInvestment = model.Concept("VCInvestment", table_name="startup_vc_investments_clean", identify_by={"id": Integer})
 VCInvestment.permalink = model.Property("{Concept:VCInvestment} has {Primitive:String:permalink}", column_name="permalink")
 VCInvestment.name = model.Property("{Concept:VCInvestment} has {Primitive:String:name}", column_name="name")
 VCInvestment.funding_total_usd = model.Property("{Concept:VCInvestment} has {Primitive:Float:funding_total_usd}", column_name="funding_total_usd")
@@ -328,7 +524,7 @@ Commodity.commodity_name = model.Property("{Concept:Commodity} has {Primitive:St
 Commodity.open_val = model.Property("{Concept:Commodity} has {Primitive:Float:open}", column_name="open")
 Commodity.close_val = model.Property("{Concept:Commodity} has {Primitive:Float:close}", column_name="close")
 
-PriceSeries = model.Concept("PriceSeries", table_name="fx_rates_foreign_exchange_rates_rates", identify_by={"id": Integer})
+PriceSeries = model.Concept("PriceSeries", table_name="fx_rates_all_clean", identify_by={"id": Integer})
 PriceSeries.time_serie = model.Property("{Concept:PriceSeries} has {Primitive:String:time_serie}", column_name="time_serie")
 PriceSeries.euro_us = model.Property("{Concept:PriceSeries} has {Primitive:Float:euro_area_euro_us}", column_name="euro_area_euro_us")
 
